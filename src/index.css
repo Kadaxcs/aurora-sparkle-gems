@@ -9,34 +9,37 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 98%;
-    --foreground: 24 9% 10%;
+    --foreground: 210 40% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 24 9% 10%;
+    --card-foreground: 210 40% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 24 9% 10%;
+    --popover-foreground: 210 40% 15%;
 
-    --primary: 24 9% 10%;
+    --primary: 210 40% 15%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 48 74% 88%;
-    --secondary-foreground: 24 9% 10%;
+    --secondary-foreground: 210 40% 15%;
 
     --muted: 60 4.8% 95.9%;
     --muted-foreground: 25 5.3% 44.7%;
 
     --accent: 48 74% 88%;
-    --accent-foreground: 24 9% 10%;
+    --accent-foreground: 210 40% 15%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 20 5.9% 90%;
     --input: 20 5.9% 90%;
-    --ring: 24 9% 10%;
+    --ring: 210 40% 15%;
 
-    /* Premium jewelry brand colors */
+    /* Premium jewelry brand colors - Navy and Gold palette */
+    --navy: 210 40% 15%;
+    --navy-light: 210 30% 25%;
+    --navy-dark: 210 50% 8%;
     --gold: 43 96% 56%;
     --gold-light: 48 100% 88%;
     --gold-dark: 37 100% 35%;
@@ -44,9 +47,22 @@ All colors MUST be HSL.
     --bronze: 30 67% 44%;
     
     /* Hero and luxury sections */
-    --hero-bg: 24 9% 10%;
+    --hero-bg: 210 40% 15%;
     --hero-text: 0 0% 98%;
     --overlay: 0 0% 0%;
+    
+    /* Gradients */
+    --gradient-navy: linear-gradient(135deg, hsl(210 40% 15%), hsl(210 30% 25%));
+    --gradient-gold: linear-gradient(135deg, hsl(43 96% 56%), hsl(48 100% 88%));
+    --gradient-dark: linear-gradient(135deg, hsl(210 40% 15%), hsl(210 50% 8%));
+    --gradient-luxury: linear-gradient(135deg, hsl(0 0% 0% / 0.8), hsl(210 40% 15% / 0.9));
+    
+    /* Shadows */
+    --shadow-gold: 0 4px 20px hsl(43 96% 56% / 0.3);
+    --shadow-elegant: 0 8px 30px hsl(210 40% 15% / 0.12);
+    --shadow-luxury: 0 20px 40px hsl(210 40% 15% / 0.15);
+
+    --radius: 0.5rem;
     
     /* Gradients */
     --gradient-gold: linear-gradient(135deg, hsl(43 96% 56%), hsl(48 100% 88%));
@@ -78,45 +94,45 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 24 9% 10%;
+    --background: 210 40% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 24 9% 15%;
+    --card: 210 40% 12%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 24 9% 15%;
+    --popover: 210 40% 12%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 43 96% 56%;
-    --primary-foreground: 24 9% 10%;
+    --primary-foreground: 210 40% 15%;
 
-    --secondary: 24 9% 15%;
+    --secondary: 210 40% 12%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 24 9% 15%;
-    --muted-foreground: 24 5% 64%;
+    --muted: 210 40% 12%;
+    --muted-foreground: 210 20% 64%;
 
     --accent: 43 96% 56%;
-    --accent-foreground: 24 9% 10%;
+    --accent-foreground: 210 40% 15%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 24 9% 15%;
-    --input: 24 9% 15%;
+    --border: 210 40% 12%;
+    --input: 210 40% 12%;
     --ring: 43 96% 56%;
 
     /* Dark mode adjustments */
-    --hero-bg: 24 9% 8%;
+    --hero-bg: 210 50% 5%;
     --overlay: 0 0% 0%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 210 40% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 210 40% 15%;
+    --sidebar-accent: 210 40% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 210 40% 12%;
+    --sidebar-ring: 43 96% 56%;
   }
 }
 
@@ -141,6 +157,10 @@ All colors MUST be HSL.
     background-color: hsl(var(--gold));
   }
 
+  .bg-gradient-navy {
+    background: var(--gradient-navy);
+  }
+
   .bg-gradient-gold {
     background: var(--gradient-gold);
   }
@@ -151,6 +171,14 @@ All colors MUST be HSL.
 
   .bg-gradient-luxury {
     background: var(--gradient-luxury);
+  }
+
+  .text-navy {
+    color: hsl(var(--navy));
+  }
+
+  .bg-navy {
+    background-color: hsl(var(--navy));
   }
 
   .shadow-gold {

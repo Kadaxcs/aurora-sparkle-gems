@@ -11,9 +11,11 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Logo e Descrição */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-serif bg-gradient-gold bg-clip-text text-transparent">
-              Bella Aurora
-            </h3>
+            <img 
+              src="/lovable-uploads/0ee9c41c-0192-4940-9010-c5a7a36aa4ce.png" 
+              alt="Bella Aurora Joias" 
+              className="h-16 w-auto"
+            />
             <p className="text-sm text-gray-300 leading-relaxed">
               Criamos joias únicas que celebram momentos especiais e expressam sua individualidade com elegância atemporal.
             </p>

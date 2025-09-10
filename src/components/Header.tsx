@@ -71,12 +71,12 @@ export function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-gold rounded-full flex items-center justify-center">
-              <span className="text-hero-bg font-bold text-sm">BA</span>
-            </div>
-            <h1 className="text-2xl font-serif font-bold text-primary">Bella Aurora</h1>
-            <span className="text-xs text-muted-foreground hidden sm:block">JOIAS & SEMI-JOIAS</span>
+          <Link to="/" className="flex items-center space-x-3">
+            <img 
+              src="/lovable-uploads/0ee9c41c-0192-4940-9010-c5a7a36aa4ce.png" 
+              alt="Bella Aurora Joias" 
+              className="h-12 w-auto"
+            />
           </Link>
 
           {/* Navigation */}

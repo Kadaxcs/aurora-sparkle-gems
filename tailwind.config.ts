@@ -52,6 +52,11 @@ export default {
           light: "hsl(var(--gold-light))",
           dark: "hsl(var(--gold-dark))",
         },
+        navy: {
+          DEFAULT: "hsl(var(--navy))",
+          light: "hsl(var(--navy-light))",
+          dark: "hsl(var(--navy-dark))",
+        },
         champagne: "hsl(var(--champagne))",
         bronze: "hsl(var(--bronze))",
         hero: {
@@ -79,6 +84,7 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
+        'gradient-navy': 'var(--gradient-navy)',
         'gradient-gold': 'var(--gradient-gold)',
         'gradient-dark': 'var(--gradient-dark)',
         'gradient-luxury': 'var(--gradient-luxury)',
