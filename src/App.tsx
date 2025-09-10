@@ -7,6 +7,11 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import Products from "./pages/Products";
+import Rings from "./pages/Rings";
+import Earrings from "./pages/Earrings";
+import Necklaces from "./pages/Necklaces";
+import Bracelets from "./pages/Bracelets";
+import Sets from "./pages/Sets";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +24,11 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/products" element={<Products />} />
+          <Route path="/aneis" element={<Rings />} />
+          <Route path="/brincos" element={<Earrings />} />
+          <Route path="/colares" element={<Necklaces />} />
+          <Route path="/pulseiras" element={<Bracelets />} />
+          <Route path="/conjuntos" element={<Sets />} />
           <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

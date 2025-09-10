@@ -1,0 +1,263 @@
+import { useEffect, useState } from "react";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Heart, ShoppingCart } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  sale_price?: number;
+  images: any;
+  short_description?: string;
+  is_featured: boolean;
+  category_id?: string;
+}
+
+export default function Necklaces() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState("name");
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchProducts();
+  }, [sortBy]);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true);
+
+      // Filtrar por categoria "colares"
+      query = query.ilike('name', '%colar%');
+
+      // Ordenação
+      if (sortBy === "price_asc") {
+        query = query.order('price', { ascending: true });
+      } else if (sortBy === "price_desc") {
+        query = query.order('price', { ascending: false });
+      } else {
+        query = query.order('name', { ascending: true });
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar colares:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os colares",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addToCart = async (productId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Login necessário",
+          description: "Faça login para adicionar produtos ao carrinho",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: existingItem } = await supabase
+        .from('cart_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('product_id', productId)
+        .single();
+
+      if (existingItem) {
+        const { error } = await supabase
+          .from('cart_items')
+          .update({ quantity: existingItem.quantity + 1 })
+          .eq('id', existingItem.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('cart_items')
+          .insert({
+            user_id: user.id,
+            product_id: productId,
+            quantity: 1
+          });
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Produto adicionado",
+        description: "O colar foi adicionado ao carrinho",
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar ao carrinho:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o colar ao carrinho",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getProductImage = (product: Product) => {
+    const images = product.images;
+    if (images && Array.isArray(images) && images.length > 0) {
+      return images[0];
+    }
+    return "/placeholder.svg";
+  };
+
+  const getProductPrice = (product: Product) => {
+    return product.sale_price || product.price;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="text-center mb-12 py-16 bg-gradient-luxury rounded-lg">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">
+            Colares Sofisticados
+          </h1>
+          <p className="text-white/80 text-lg max-w-2xl mx-auto">
+            Charme e sofisticação que complementam sua beleza natural
+          </p>
+        </div>
+
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-2xl font-serif text-foreground">Coleção de Colares</h2>
+            <p className="text-muted-foreground">
+              {products.length} colar{products.length !== 1 ? 'es' : ''} encontrado{products.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Ordenar por" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Nome</SelectItem>
+                <SelectItem value="price_asc">Menor Preço</SelectItem>
+                <SelectItem value="price_desc">Maior Preço</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {products.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground text-lg">
+              Nenhum colar encontrado
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <Card key={product.id} className="group hover:shadow-elegant transition-all duration-300">
+                <CardContent className="p-0">
+                  <div className="relative overflow-hidden rounded-t-lg">
+                    <img
+                      src={getProductImage(product)}
+                      alt={product.name}
+                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {product.sale_price && (
+                      <Badge className="absolute top-3 left-3 bg-destructive">
+                        Oferta
+                      </Badge>
+                    )}
+                    {product.is_featured && (
+                      <Badge className="absolute top-3 right-3 bg-primary">
+                        Destaque
+                      </Badge>
+                    )}
+                    
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2">
+                      <Button variant="secondary" size="sm">
+                        <Heart className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        onClick={() => addToCart(product.id)}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 space-y-2">
+                    <h3 className="font-medium text-card-foreground group-hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                    
+                    {product.short_description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {product.short_description}
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="font-semibold text-primary">
+                          R$ {getProductPrice(product).toFixed(2)}
+                        </div>
+                        {product.sale_price && (
+                          <div className="text-sm text-muted-foreground line-through">
+                            R$ {product.price.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <Button 
+                        size="sm" 
+                        className="bg-primary hover:bg-primary/90"
+                        onClick={() => addToCart(product.id)}
+                      >
+                        Adicionar
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

@@ -80,11 +80,11 @@ export function Header() {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/products" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Anéis</Link>
-            <Link to="/products" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Brincos</Link>
-            <Link to="/products" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Colares</Link>
-            <Link to="/products" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Pulseiras</Link>
-            <Link to="/products" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Conjuntos</Link>
+            <Link to="/aneis" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Anéis</Link>
+            <Link to="/brincos" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Brincos</Link>
+            <Link to="/colares" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Colares</Link>
+            <Link to="/pulseiras" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Pulseiras</Link>
+            <Link to="/conjuntos" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Conjuntos</Link>
           </nav>
 
           {/* Actions */}
