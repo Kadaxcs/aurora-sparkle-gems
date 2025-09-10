@@ -27,39 +27,73 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h4 className="font-semibold text-gold text-lg mb-6">Links Rápidos</h4>
-            <div className="space-y-3">
-              <Link to="/page/sobre-nos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+          <div className="space-y-6">
+            <h4 className="font-serif text-gold text-xl font-semibold tracking-wide">
+              Links Rápidos
+            </h4>
+            <nav className="grid grid-cols-1 gap-4">
+              <Link 
+                to="/page/sobre-nos" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Sobre Nós
               </Link>
-              <Link to="/aneis" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+              <Link 
+                to="/aneis" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Anéis
               </Link>
-              <Link to="/brincos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+              <Link 
+                to="/brincos" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Brincos
               </Link>
-              <Link to="/colares" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+              <Link 
+                to="/colares" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Colares
               </Link>
-              <Link to="/pulseiras" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+              <Link 
+                to="/pulseiras" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Pulseiras
               </Link>
-              <Link to="/conjuntos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+              <Link 
+                to="/conjuntos" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Conjuntos
               </Link>
-              <Link to="/page/sobre-nos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+              <Link 
+                to="/page/sobre-nos" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Joias Personalizadas
               </Link>
-              <Link to="/page/sobre-nos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+              <Link 
+                to="/page/sobre-nos" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Cuidados com as Joias
               </Link>
-            </div>
+            </nav>
           </div>
 
           {/* Atendimento */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-gold">Atendimento</h4>
+          <div className="space-y-6">
+            <h4 className="font-serif text-gold text-xl font-semibold tracking-wide">Atendimento</h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-gold" />
@@ -79,23 +113,36 @@ export function Footer() {
           </div>
 
           {/* Políticas */}
-          <div className="space-y-4">
-            <h4 className="font-semibold text-gold text-lg mb-6">Políticas</h4>
-            <div className="space-y-3">
-              <Link to="/page/politica-privacidade" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+          <div className="space-y-6">
+            <h4 className="font-serif text-gold text-xl font-semibold tracking-wide">Políticas</h4>
+            <nav className="grid grid-cols-1 gap-4">
+              <Link 
+                to="/page/politica-privacidade" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Política de Privacidade
               </Link>
-              <Link to="/page/termos-condicoes" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+              <Link 
+                to="/page/termos-condicoes" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Termos e Condições
               </Link>
-              <Link to="/page/politica-troca-devolucao" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+              <Link 
+                to="/page/politica-troca-devolucao" 
+                className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
+              >
+                <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Trocas e Devoluções
               </Link>
-              <div className="pt-2">
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  Envios para todo o Brasil com segurança e agilidade. Parcele em até 12x sem juros.
-                </p>
-              </div>
+            </nav>
+            <div className="pt-4 border-t border-gold/20">
+              <p className="text-sm text-gray-400 leading-relaxed font-medium">
+                💎 Envios para todo o Brasil com segurança e agilidade<br/>
+                🏆 Parcele em até 12x sem juros
+              </p>
             </div>
           </div>
         </div>
