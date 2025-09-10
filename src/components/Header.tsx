@@ -7,10 +7,10 @@ import {
   ShoppingCart, 
   Heart, 
   User, 
-  Menu,
-  LogOut
+  Menu
 } from "lucide-react";
 import { AuthDialog } from "@/components/auth/AuthDialog";
+import { UserAccountDropdown } from "@/components/auth/UserAccountDropdown";
 import { CartSidebar } from "@/components/cart/CartSidebar";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -61,9 +61,6 @@ export function Header() {
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
 
   return (
     <header className="w-full bg-secondary/30 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
@@ -112,11 +109,7 @@ export function Header() {
             </Button>
 
             {user ? (
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                  <LogOut className="h-5 w-5" />
-                </Button>
-              </div>
+              <UserAccountDropdown user={user} />
             ) : (
               <Button 
                 variant="ghost" 

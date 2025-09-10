@@ -5,7 +5,6 @@ import {
   FolderOpen, 
   Ticket, 
   Users,
-  LogOut,
   Upload
 } from "lucide-react";
 import {
@@ -18,9 +17,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -38,13 +34,6 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };
-
   return (
     <Sidebar className="w-64 border-r border-border">
       <SidebarContent>
@@ -69,17 +58,6 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
-        <div className="mt-auto p-4">
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="w-full"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair
-          </Button>
-        </div>
       </SidebarContent>
     </Sidebar>
   );
