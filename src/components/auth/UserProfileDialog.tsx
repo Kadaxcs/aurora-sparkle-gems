@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,16 +28,16 @@ export function UserProfileDialog({
   profile, 
   onProfileUpdate 
 }: UserProfileDialogProps) {
-  const [displayName, setDisplayName] = useState("");
-  const [bio, setBio] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (profile) {
-      setDisplayName(profile.display_name || "");
-      setBio(profile.bio || "");
+      setFirstName(profile.first_name || "");
+      setLastName(profile.last_name || "");
       setPhone(profile.phone || "");
     }
   }, [profile]);
@@ -48,8 +47,8 @@ export function UserProfileDialog({
     try {
       const profileData = {
         user_id: user.id,
-        display_name: displayName,
-        bio: bio,
+        first_name: firstName,
+        last_name: lastName,
         phone: phone,
         updated_at: new Date().toISOString(),
       };
@@ -117,15 +116,28 @@ export function UserProfileDialog({
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="displayName" className="text-right">
+            <Label htmlFor="firstName" className="text-right">
               Nome
             </Label>
             <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              id="firstName"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
               className="col-span-3"
-              placeholder="Seu nome completo"
+              placeholder="Seu primeiro nome"
+            />
+          </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="lastName" className="text-right">
+              Sobrenome
+            </Label>
+            <Input
+              id="lastName"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="col-span-3"
+              placeholder="Seu sobrenome"
             />
           </div>
           
@@ -139,20 +151,6 @@ export function UserProfileDialog({
               onChange={(e) => setPhone(e.target.value)}
               className="col-span-3"
               placeholder="(11) 99999-9999"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="bio" className="text-right">
-              Bio
-            </Label>
-            <Textarea
-              id="bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              className="col-span-3"
-              placeholder="Conte um pouco sobre você..."
-              rows={3}
             />
           </div>
         </div>

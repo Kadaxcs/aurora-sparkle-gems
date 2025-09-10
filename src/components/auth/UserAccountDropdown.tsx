@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { User, Settings, LogOut } from "lucide-react";
+import { User, Settings, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +18,7 @@ interface UserAccountDropdownProps {
 }
 
 export function UserAccountDropdown({ user }: UserAccountDropdownProps) {
+  const navigate = useNavigate();
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [profile, setProfile] = useState<any>(null);
 
@@ -49,7 +51,15 @@ export function UserAccountDropdown({ user }: UserAccountDropdownProps) {
     await supabase.auth.signOut();
   };
 
-  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Usuário';
+  const handleAdminAccess = () => {
+    navigate('/admin');
+  };
+
+  const displayName = profile?.first_name && profile?.last_name 
+    ? `${profile.first_name} ${profile.last_name}`
+    : profile?.display_name || user?.email?.split('@')[0] || 'Usuário';
+
+  const isAdmin = profile?.role === 'admin';
 
   return (
     <>
@@ -76,6 +86,15 @@ export function UserAccountDropdown({ user }: UserAccountDropdownProps) {
             <Settings className="mr-2 h-4 w-4" />
             <span>Minha Conta</span>
           </DropdownMenuItem>
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleAdminAccess}>
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Painel Administrativo</span>
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
