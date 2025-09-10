@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { RichTextEditor } from "./RichTextEditor";
+import { MediaUploader } from "./MediaUploader";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +29,13 @@ interface Category {
   name: string;
 }
 
+interface MediaItem {
+  id: string;
+  type: 'image' | 'video';
+  url: string;
+  thumbnail?: string;
+}
+
 interface ProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -48,12 +57,15 @@ export function AddProductDialog({
     sku: "",
     price: "",
     sale_price: "",
+    cost_price: "",
     stock_quantity: "",
     weight: "",
     category_id: "",
     is_active: true,
     is_featured: false,
+    dimensions: { length: "", width: "", height: "" },
   });
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,7 +95,8 @@ export function AddProductDialog({
         category_id: formData.category_id || null,
         is_active: formData.is_active,
         is_featured: formData.is_featured,
-        images: [],
+        images: media.map(item => item.url),
+        dimensions: formData.dimensions.length ? formData.dimensions : null,
       };
 
       const { error } = await supabase
@@ -105,12 +118,15 @@ export function AddProductDialog({
         sku: "",
         price: "",
         sale_price: "",
+        cost_price: "",
         stock_quantity: "",
         weight: "",
         category_id: "",
         is_active: true,
         is_featured: false,
+        dimensions: { length: "", width: "", height: "" },
       });
+      setMedia([]);
 
       onProductCreated();
       onOpenChange(false);
@@ -170,17 +186,27 @@ export function AddProductDialog({
 
           <div className="space-y-2">
             <Label htmlFor="description">Descrição Completa</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
+            <RichTextEditor
+              content={formData.description}
+              onChange={(content) => setFormData({ ...formData, description: content })}
+              placeholder="Digite a descrição completa do produto..."
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="price">Preço Original *</Label>
+              <Label htmlFor="cost_price">Preço de Custo</Label>
+              <Input
+                id="cost_price"
+                type="number"
+                step="0.01"
+                value={formData.cost_price}
+                onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price">Preço de Venda *</Label>
               <Input
                 id="price"
                 type="number"
@@ -244,6 +270,48 @@ export function AddProductDialog({
               </Select>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label>Dimensões (cm)</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <Input
+                placeholder="Comprimento"
+                type="number"
+                step="0.01"
+                value={formData.dimensions.length}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  dimensions: { ...formData.dimensions, length: e.target.value }
+                })}
+              />
+              <Input
+                placeholder="Largura"
+                type="number"
+                step="0.01"
+                value={formData.dimensions.width}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  dimensions: { ...formData.dimensions, width: e.target.value }
+                })}
+              />
+              <Input
+                placeholder="Altura"
+                type="number"
+                step="0.01"
+                value={formData.dimensions.height}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  dimensions: { ...formData.dimensions, height: e.target.value }
+                })}
+              />
+            </div>
+          </div>
+
+          <MediaUploader
+            media={media}
+            onChange={setMedia}
+            maxItems={10}
+          />
 
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">

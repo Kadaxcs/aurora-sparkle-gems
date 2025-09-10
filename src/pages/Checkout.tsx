@@ -3,61 +3,44 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { 
-  ArrowLeft, 
-  CreditCard, 
-  MapPin, 
-  User, 
-  Package,
-  Truck 
-} from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowLeft, CreditCard, Smartphone, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Header } from "@/components/Header";
 
 interface CartItem {
   id: string;
   product_id: string;
   quantity: number;
+  created_at: string;
   products: {
     id: string;
     name: string;
     price: number;
     sale_price?: number;
     images: any;
+    slug: string;
   };
 }
 
 interface CheckoutData {
-  // Dados pessoais
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  
-  // Endereço
+  document: string;
+  zipCode: string;
   street: string;
   number: string;
   complement: string;
   neighborhood: string;
   city: string;
   state: string;
-  zipCode: string;
-  
-  // Pagamento
   paymentMethod: "credit_card" | "pix" | "boleto";
-  
-  // Observações
   notes: string;
 }
 
@@ -66,24 +49,25 @@ export default function Checkout() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   const [checkoutData, setCheckoutData] = useState<CheckoutData>({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
+    document: "",
+    zipCode: "",
     street: "",
     number: "",
     complement: "",
     neighborhood: "",
     city: "",
     state: "",
-    zipCode: "",
     paymentMethod: "credit_card",
     notes: "",
   });
-  
-  const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     checkAuthAndLoadCart();
@@ -95,7 +79,7 @@ export default function Checkout() {
       
       if (!user) {
         toast({
-          title: "Acesso negado",
+          title: "Login necessário",
           description: "Você precisa estar logado para acessar o checkout",
           variant: "destructive",
         });
@@ -104,8 +88,8 @@ export default function Checkout() {
       }
 
       setUser(user);
-      
-      // Carregar dados do perfil
+
+      // Buscar dados do perfil
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -122,8 +106,8 @@ export default function Checkout() {
         }));
       }
 
-      // Carregar itens do carrinho
-      const { data: cartData, error } = await supabase
+      // Buscar itens do carrinho
+      const { data: items, error } = await supabase
         .from('cart_items')
         .select(`
           *,
@@ -132,28 +116,30 @@ export default function Checkout() {
             name,
             price,
             sale_price,
-            images
+            images,
+            slug
           )
         `)
         .eq('user_id', user.id);
 
       if (error) throw error;
-      
-      if (!cartData || cartData.length === 0) {
+
+      if (!items || items.length === 0) {
         toast({
           title: "Carrinho vazio",
-          description: "Adicione produtos ao carrinho antes de finalizar a compra",
+          description: "Adicione produtos ao carrinho antes de finalizar",
+          variant: "destructive",
         });
         navigate("/");
         return;
       }
 
-      setCartItems(cartData);
+      setCartItems(items);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os dados do checkout",
+        description: "Erro ao carregar dados do checkout",
         variant: "destructive",
       });
       navigate("/");
@@ -173,132 +159,100 @@ export default function Checkout() {
   };
 
   const getShippingCost = () => {
-    // Frete fixo por enquanto
-    return 15.00;
+    return 15.00; // Valor fixo de frete
   };
 
   const getTotal = () => {
     return getSubtotal() + getShippingCost();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    try {
-      // Validações básicas
-      if (!checkoutData.firstName || !checkoutData.lastName || !checkoutData.email) {
-        throw new Error("Preencha todos os campos obrigatórios");
-      }
-
-      if (!checkoutData.street || !checkoutData.city || !checkoutData.zipCode) {
-        throw new Error("Preencha o endereço completo");
-      }
-
-      // Criar pedido no banco primeiro
-      const order = await createOrder();
-
-      // Redirecionar para MercadoPago
-      await createMercadoPagoPayment(order);
-
-    } catch (error: any) {
-      console.error('Erro ao processar pedido:', error);
-      toast({
-        title: "Erro no checkout",
-        description: error.message || "Não foi possível processar seu pedido",
-        variant: "destructive",
-      });
-      setSubmitting(false);
-    }
-  };
-
   const createOrder = async () => {
-    // Criar pedido
-    const orderData = {
-      user_id: user.id,
-      status: 'pending' as const,
-      payment_status: 'pending' as const,
-      payment_method: checkoutData.paymentMethod,
-      subtotal: getSubtotal(),
-      shipping_cost: getShippingCost(),
-      total: getTotal(),
-      order_number: `ORD-${Date.now()}`,
-      shipping_address: {
-        street: checkoutData.street,
-        number: checkoutData.number,
-        complement: checkoutData.complement,
-        neighborhood: checkoutData.neighborhood,
-        city: checkoutData.city,
-        state: checkoutData.state,
-        zip_code: checkoutData.zipCode,
-      },
-      billing_address: {
-        street: checkoutData.street,
-        number: checkoutData.number,
-        complement: checkoutData.complement,
-        neighborhood: checkoutData.neighborhood,
-        city: checkoutData.city,
-        state: checkoutData.state,
-        zip_code: checkoutData.zipCode,
-      },
-      notes: checkoutData.notes,
-    };
+    try {
+      // Gerar número do pedido
+      const { data: orderNumber } = await supabase.rpc('generate_order_number');
 
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert(orderData)
-      .select()
-      .single();
+      // Criar pedido
+      const orderData = {
+        user_id: user.id,
+        order_number: orderNumber,
+        subtotal: getSubtotal(),
+        shipping_cost: getShippingCost(),
+        total: getTotal(),
+        payment_method: checkoutData.paymentMethod,
+        shipping_address: {
+          firstName: checkoutData.firstName,
+          lastName: checkoutData.lastName,
+          phone: checkoutData.phone,
+          zipCode: checkoutData.zipCode,
+          street: checkoutData.street,
+          number: checkoutData.number,
+          complement: checkoutData.complement,
+          neighborhood: checkoutData.neighborhood,
+          city: checkoutData.city,
+          state: checkoutData.state,
+        },
+        notes: checkoutData.notes || null,
+      };
 
-    if (orderError) throw orderError;
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert([orderData])
+        .select()
+        .single();
 
-    // Criar itens do pedido
-    const orderItems = cartItems.map(item => ({
-      order_id: order.id,
-      product_id: item.product_id,
-      quantity: item.quantity,
-      price: getItemPrice(item),
-      total: getItemPrice(item) * item.quantity,
-    }));
+      if (orderError) throw orderError;
 
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
+      // Criar itens do pedido
+      const orderItems = cartItems.map(item => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: getItemPrice(item),
+        total: getItemPrice(item) * item.quantity,
+      }));
 
-    if (itemsError) throw itemsError;
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
 
-    // Limpar carrinho
-    const { error: clearCartError } = await supabase
-      .from('cart_items')
-      .delete()
-      .eq('user_id', user.id);
+      if (itemsError) throw itemsError;
 
-    if (clearCartError) throw clearCartError;
+      // Limpar carrinho
+      const { error: clearCartError } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', user.id);
 
+      if (clearCartError) throw clearCartError;
 
-    return order;
+      return order;
+    } catch (error) {
+      console.error('Erro ao criar pedido:', error);
+      throw error;
+    }
   };
 
   const createMercadoPagoPayment = async (order: any) => {
     try {
-      // Preparar dados para MercadoPago
-      const items = cartItems.map(item => ({
-        title: item.products.name,
-        quantity: item.quantity,
-        unit_price: getItemPrice(item),
-        currency_id: "BRL",
-      }));
-
       const paymentData = {
-        items,
+        items: cartItems.map(item => ({
+          title: item.products.name,
+          quantity: item.quantity,
+          unit_price: getItemPrice(item),
+          currency_id: "BRL",
+        })),
         payer: {
           name: checkoutData.firstName,
           surname: checkoutData.lastName,
           email: checkoutData.email,
-          phone: checkoutData.phone ? {
+          phone: {
             area_code: checkoutData.phone.substring(0, 2),
             number: checkoutData.phone.substring(2),
-          } : undefined,
+          },
+          identification: {
+            type: "CPF",
+            number: checkoutData.document,
+          },
           address: {
             street_name: checkoutData.street,
             street_number: checkoutData.number,
@@ -309,17 +263,21 @@ export default function Checkout() {
           },
         },
         back_urls: {
-          success: `${window.location.origin}/pedido-confirmado/${order.id}`,
-          failure: `${window.location.origin}/checkout`,
-          pending: `${window.location.origin}/pedido-confirmado/${order.id}`,
+          success: `${window.location.origin}/pedido-confirmado?order=${order.id}`,
+          failure: `${window.location.origin}/checkout?error=payment_failed`,
+          pending: `${window.location.origin}/pedido-confirmado?order=${order.id}&status=pending`,
         },
         auto_return: "approved",
         payment_methods: {
           excluded_payment_methods: [],
-          excluded_payment_types: [],
+          excluded_payment_types: checkoutData.paymentMethod === "credit_card" ? 
+            [{ id: "ticket" }, { id: "bank_transfer" }] : 
+            checkoutData.paymentMethod === "pix" ?
+            [{ id: "ticket" }, { id: "credit_card" }] :
+            [{ id: "credit_card" }, { id: "bank_transfer" }],
           installments: 12,
         },
-        external_reference: order.order_number,
+        external_reference: order.id,
       };
 
       const { data, error } = await supabase.functions.invoke('create-mercadopago-payment', {
@@ -328,18 +286,38 @@ export default function Checkout() {
 
       if (error) throw error;
 
-      // Redirecionar para MercadoPago
-      if (data?.sandbox_init_point) {
-        window.location.href = data.sandbox_init_point;
-      } else if (data?.init_point) {
-        window.location.href = data.init_point;
-      } else {
-        throw new Error("URL de pagamento não encontrada");
-      }
+      // Redirecionar para o Mercado Pago
+      window.location.href = data.init_point;
+    } catch (error) {
+      console.error('Erro ao criar pagamento:', error);
+      throw error;
+    }
+  };
 
-    } catch (error: any) {
-      console.error('Erro ao criar pagamento MercadoPago:', error);
-      throw new Error("Erro ao processar pagamento: " + error.message);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!checkoutData.firstName || !checkoutData.email || !checkoutData.zipCode) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const order = await createOrder();
+      await createMercadoPagoPayment(order);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao processar pedido. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -352,36 +330,34 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen bg-background">
+      <Header />
+      
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center mb-8">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
-            className="gap-2"
+            onClick={() => navigate(-1)}
+            className="mr-4"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
-          <h1 className="text-3xl font-serif text-primary">Finalizar Compra</h1>
+          <h1 className="text-3xl font-serif font-bold">Finalizar Pedido</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Formulário de Checkout */}
-          <div className="lg:col-span-2 space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Formulário de Checkout */}
+            <div className="lg:col-span-2 space-y-6">
               {/* Dados Pessoais */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Dados Pessoais
-                  </CardTitle>
+                  <CardTitle>Dados Pessoais</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                       <Label htmlFor="firstName">Nome *</Label>
                       <Input
                         id="firstName"
@@ -390,7 +366,7 @@ export default function Checkout() {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div>
                       <Label htmlFor="lastName">Sobrenome *</Label>
                       <Input
                         id="lastName"
@@ -400,9 +376,8 @@ export default function Checkout() {
                       />
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                       <Label htmlFor="email">E-mail *</Label>
                       <Input
                         id="email"
@@ -412,7 +387,7 @@ export default function Checkout() {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div>
                       <Label htmlFor="phone">Telefone *</Label>
                       <Input
                         id="phone"
@@ -422,20 +397,35 @@ export default function Checkout() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <Label htmlFor="document">CPF *</Label>
+                    <Input
+                      id="document"
+                      value={checkoutData.document}
+                      onChange={(e) => setCheckoutData({ ...checkoutData, document: e.target.value })}
+                      required
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Endereço de Entrega */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    Endereço de Entrega
-                  </CardTitle>
+                  <CardTitle>Endereço de Entrega</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="col-span-3 space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="zipCode">CEP *</Label>
+                      <Input
+                        id="zipCode"
+                        value={checkoutData.zipCode}
+                        onChange={(e) => setCheckoutData({ ...checkoutData, zipCode: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="md:col-span-2">
                       <Label htmlFor="street">Rua *</Label>
                       <Input
                         id="street"
@@ -444,7 +434,9 @@ export default function Checkout() {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
                       <Label htmlFor="number">Número *</Label>
                       <Input
                         id="number"
@@ -453,19 +445,17 @@ export default function Checkout() {
                         required
                       />
                     </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="complement">Complemento</Label>
+                      <Input
+                        id="complement"
+                        value={checkoutData.complement}
+                        onChange={(e) => setCheckoutData({ ...checkoutData, complement: e.target.value })}
+                      />
+                    </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="complement">Complemento</Label>
-                    <Input
-                      id="complement"
-                      value={checkoutData.complement}
-                      onChange={(e) => setCheckoutData({ ...checkoutData, complement: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                       <Label htmlFor="neighborhood">Bairro *</Label>
                       <Input
                         id="neighborhood"
@@ -474,7 +464,7 @@ export default function Checkout() {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div>
                       <Label htmlFor="city">Cidade *</Label>
                       <Input
                         id="city"
@@ -483,54 +473,53 @@ export default function Checkout() {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="state">Estado *</Label>
-                      <Input
-                        id="state"
-                        value={checkoutData.state}
-                        onChange={(e) => setCheckoutData({ ...checkoutData, state: e.target.value })}
-                        required
-                      />
-                    </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="zipCode">CEP *</Label>
+                  <div>
+                    <Label htmlFor="state">Estado *</Label>
                     <Input
-                      id="zipCode"
-                      value={checkoutData.zipCode}
-                      onChange={(e) => setCheckoutData({ ...checkoutData, zipCode: e.target.value })}
+                      id="state"
+                      value={checkoutData.state}
+                      onChange={(e) => setCheckoutData({ ...checkoutData, state: e.target.value })}
                       required
                     />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Método de Pagamento */}
+              {/* Forma de Pagamento */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    Método de Pagamento
-                  </CardTitle>
+                  <CardTitle>Forma de Pagamento</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
-                    <Select
-                      value={checkoutData.paymentMethod}
-                      onValueChange={(value: any) => setCheckoutData({ ...checkoutData, paymentMethod: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a forma de pagamento" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                        <SelectItem value="pix">PIX</SelectItem>
-                        <SelectItem value="boleto">Boleto Bancário</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <RadioGroup
+                    value={checkoutData.paymentMethod}
+                    onValueChange={(value: "credit_card" | "pix" | "boleto") => 
+                      setCheckoutData({ ...checkoutData, paymentMethod: value })
+                    }
+                  >
+                    <div className="flex items-center space-x-2 p-4 border rounded-lg">
+                      <RadioGroupItem value="credit_card" id="credit_card" />
+                      <Label htmlFor="credit_card" className="flex items-center cursor-pointer">
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Cartão de Crédito (até 12x sem juros)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-4 border rounded-lg">
+                      <RadioGroupItem value="pix" id="pix" />
+                      <Label htmlFor="pix" className="flex items-center cursor-pointer">
+                        <Smartphone className="h-4 w-4 mr-2" />
+                        PIX (5% de desconto)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-4 border rounded-lg">
+                      <RadioGroupItem value="boleto" id="boleto" />
+                      <Label htmlFor="boleto" className="flex items-center cursor-pointer">
+                        <Receipt className="h-4 w-4 mr-2" />
+                        Boleto Bancário (3% de desconto)
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </CardContent>
               </Card>
 
@@ -540,87 +529,69 @@ export default function Checkout() {
                   <CardTitle>Observações</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Observações sobre o pedido</Label>
-                    <Textarea
-                      id="notes"
-                      value={checkoutData.notes}
-                      onChange={(e) => setCheckoutData({ ...checkoutData, notes: e.target.value })}
-                      placeholder="Informações adicionais sobre o pedido..."
-                      rows={3}
-                    />
-                  </div>
+                  <Textarea
+                    placeholder="Observações sobre o pedido (opcional)"
+                    value={checkoutData.notes}
+                    onChange={(e) => setCheckoutData({ ...checkoutData, notes: e.target.value })}
+                    rows={3}
+                  />
                 </CardContent>
               </Card>
-            </form>
-          </div>
+            </div>
 
-          {/* Resumo do Pedido */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Resumo do Pedido
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex gap-3">
-                    <div className="w-12 h-12 bg-muted rounded-md overflow-hidden">
-                      {item.products.images && Array.isArray(item.products.images) && item.products.images[0] && (
-                        <img 
-                          src={item.products.images[0]} 
-                          alt={item.products.name}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{item.products.name}</h4>
-                      <div className="flex justify-between items-center">
-                        <Badge variant="secondary">Qtd: {item.quantity}</Badge>
-                        <span className="font-medium">
+            {/* Resumo do Pedido */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resumo do Pedido</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {cartItems.map((item) => (
+                    <div key={item.id} className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm">{item.products.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Quantidade: {item.quantity}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">
                           R$ {(getItemPrice(item) * item.quantity).toFixed(2)}
-                        </span>
+                        </p>
                       </div>
                     </div>
-                  </div>
-                ))}
-                
-                <Separator />
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>R$ {getSubtotal().toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="flex items-center gap-1">
-                      <Truck className="h-4 w-4" />
-                      Frete:
-                    </span>
-                    <span>R$ {getShippingCost().toFixed(2)}</span>
-                  </div>
+                  ))}
+                  
                   <Separator />
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Total:</span>
-                    <span>R$ {getTotal().toFixed(2)}</span>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span>R$ {getSubtotal().toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Frete:</span>
+                      <span>R$ {getShippingCost().toFixed(2)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total:</span>
+                      <span>R$ {getTotal().toFixed(2)}</span>
+                    </div>
                   </div>
-                </div>
-                
-                <Button 
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="w-full"
-                  size="lg"
-                >
-                  {submitting ? "Processando..." : "Finalizar Pedido"}
-                </Button>
-              </CardContent>
-            </Card>
+
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full h-12 text-lg"
+                  >
+                    {submitting ? "Processando..." : "Finalizar Pedido"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

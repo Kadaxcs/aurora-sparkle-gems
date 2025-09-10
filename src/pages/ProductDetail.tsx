@@ -348,9 +348,18 @@ export default function ProductDetail() {
                 ) : (
                   <>
                     <ShoppingCart className="h-5 w-5 mr-2" />
-                    Comprar
+                    Adicionar ao Carrinho
                   </>
                 )}
+              </Button>
+
+              <Button
+                onClick={() => navigate('/checkout')}
+                variant="default"
+                className="w-full h-12 text-lg bg-accent hover:bg-accent/90"
+                disabled={product.stock_quantity === 0}
+              >
+                Comprar Agora
               </Button>
 
               <Button
