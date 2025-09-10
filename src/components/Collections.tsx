@@ -1,5 +1,6 @@
-import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import earringsImg from "@/assets/earrings-collection.jpg";
 import necklaceImg from "@/assets/necklace-collection.jpg";
 import braceletsImg from "@/assets/bracelets-collection.jpg";
@@ -64,8 +65,11 @@ export const Collections = () => {
                 
                 {/* Hover Content */}
                 <div className="absolute inset-0 flex items-end justify-center p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <Button variant="luxury" size="sm">
-                    Ver Coleção
+                  <Button 
+                    className="mt-4 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    asChild
+                  >
+                    <Link to="/products">Ver Coleção</Link>
                   </Button>
                 </div>
 
@@ -90,8 +94,8 @@ export const Collections = () => {
 
         {/* CTA */}
         <div className="text-center mt-16">
-          <Button variant="outline" size="lg" className="border-gold text-gold hover:bg-gold hover:text-hero-bg">
-            Ver Todas as Coleções
+          <Button variant="outline" size="lg" className="border-gold text-gold hover:bg-gold hover:text-hero-bg" asChild>
+            <Link to="/products">Ver Todas as Coleções</Link>
           </Button>
         </div>
       </div>
