@@ -275,16 +275,6 @@ export default function Checkout() {
 
     if (clearCartError) throw clearCartError;
 
-    // Enviar pedido para Loja Integrada
-    try {
-      await supabase.functions.invoke('create-order-loja-integrada', {
-        body: { orderId: order.id }
-      });
-      console.log('Pedido enviado para Loja Integrada');
-    } catch (lojaError) {
-      console.warn('Erro ao enviar para Loja Integrada:', lojaError);
-      // Não falha o checkout se a integração com Loja Integrada falhar
-    }
 
     return order;
   };

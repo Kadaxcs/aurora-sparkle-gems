@@ -6,8 +6,7 @@ import {
   Ticket, 
   Users,
   LogOut,
-  Upload,
-  Link
+  Upload
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,7 +30,6 @@ const menuItems = [
   { id: "categories", label: "Categorias", icon: FolderOpen },
   { id: "coupons", label: "Cupons", icon: Ticket },
   { id: "users", label: "Usuários", icon: Users },
-  { id: "loja-integrada", label: "Loja Integrada", icon: Link },
 ];
 
 interface AdminSidebarProps {
