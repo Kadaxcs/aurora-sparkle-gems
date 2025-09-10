@@ -5,7 +5,8 @@ import {
   FolderOpen, 
   Ticket, 
   Users,
-  Upload
+  Upload,
+  FileText
 } from "lucide-react";
 import {
   Sidebar,
@@ -26,6 +27,7 @@ const menuItems = [
   { id: "categories", label: "Categorias", icon: FolderOpen },
   { id: "coupons", label: "Cupons", icon: Ticket },
   { id: "users", label: "Usuários", icon: Users },
+  { id: "pages", label: "Páginas", icon: FileText },
 ];
 
 interface AdminSidebarProps {

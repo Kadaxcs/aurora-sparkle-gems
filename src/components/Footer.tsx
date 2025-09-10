@@ -2,6 +2,7 @@ import { Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Link } from "react-router-dom";
 
 export function Footer() {
   return (
@@ -31,14 +32,14 @@ export function Footer() {
             <h4 className="font-medium text-gold">Links Rápidos</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-gray-300 hover:text-gold transition-colors">
+                <Link to="/page/sobre-nos" className="text-gray-300 hover:text-gold transition-colors">
                   Sobre Nós
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-gold transition-colors">
+                <Link to="/aneis" className="text-gray-300 hover:text-gold transition-colors">
                   Coleções
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="#" className="text-gray-300 hover:text-gold transition-colors">
@@ -64,7 +65,7 @@ export function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-gold" />
-                <span className="text-gray-300">(11) 99999-9999</span>
+                <span className="text-gray-300">(51) 9 8176-5717</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-gold" />
@@ -73,8 +74,7 @@ export function Footer() {
               <li className="flex items-start space-x-2">
                 <MapPin className="h-4 w-4 text-gold mt-0.5" />
                 <span className="text-gray-300">
-                  Rua das Joias, 123<br />
-                  Centro, São Paulo - SP
+                  Centro, Osório - RS
                 </span>
               </li>
             </ul>
@@ -106,15 +106,15 @@ export function Footer() {
             © 2024 Bella Aurora Joias. Todos os direitos reservados.
           </div>
           <div className="flex space-x-6 text-sm">
-            <a href="#" className="text-gray-300 hover:text-gold transition-colors">
+            <Link to="/page/politica-privacidade" className="text-gray-300 hover:text-gold transition-colors">
               Política de Privacidade
-            </a>
-            <a href="#" className="text-gray-300 hover:text-gold transition-colors">
+            </Link>
+            <Link to="/page/termos-condicoes" className="text-gray-300 hover:text-gold transition-colors">
               Termos de Uso
-            </a>
-            <a href="#" className="text-gray-300 hover:text-gold transition-colors">
+            </Link>
+            <Link to="/page/politica-troca-devolucao" className="text-gray-300 hover:text-gold transition-colors">
               Trocas e Devoluções
-            </a>
+            </Link>
           </div>
         </div>
       </div>

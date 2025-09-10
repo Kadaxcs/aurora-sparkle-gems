@@ -7,6 +7,7 @@ import { AdminCategories } from "@/components/admin/AdminCategories";
 import { AdminCoupons } from "@/components/admin/AdminCoupons";
 import { AdminProductImport } from "@/components/admin/AdminProductImport";
 import { AdminUsers } from "@/components/admin/AdminUsers";
+import { AdminPages } from "@/components/admin/AdminPages";
 
 import { AdminProtectedRoute } from "@/components/auth/AdminProtectedRoute";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -30,6 +31,8 @@ export default function Admin() {
         return <AdminCoupons />;
       case "users":
         return <AdminUsers />;
+      case "pages":
+        return <AdminPages />;
       default:
         return <AdminDashboard />;
     }
