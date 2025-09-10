@@ -244,7 +244,10 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
                 </span>
               </div>
               
-              <Button className="w-full bg-primary hover:bg-primary/90">
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90"
+                onClick={() => window.location.href = '/checkout'}
+              >
                 Finalizar Compra
               </Button>
             </div>
