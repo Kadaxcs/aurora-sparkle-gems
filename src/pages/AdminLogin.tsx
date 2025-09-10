@@ -3,11 +3,12 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AdminPasswordReset } from "@/components/admin/AdminPasswordReset";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -232,6 +233,18 @@ export default function AdminLogin() {
                 <strong>Para desenvolvimento:</strong><br />
                 Use qualquer email válido e senha para criar um usuário admin no banco de dados
               </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-red-500/20 border-red-500/30 mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg text-red-100">Reset de Senha Admin</CardTitle>
+              <CardDescription className="text-red-200">
+                Problemas para fazer login? Use o reset de senha.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminPasswordReset />
             </CardContent>
           </Card>
         </div>
