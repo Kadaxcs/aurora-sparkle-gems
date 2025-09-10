@@ -75,14 +75,14 @@ export function Footer() {
                 Conjuntos
               </Link>
               <Link 
-                to="/page/sobre-nos" 
+                to="/joias-personalizadas" 
                 className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
               >
                 <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>
                 Joias Personalizadas
               </Link>
               <Link 
-                to="/page/sobre-nos" 
+                to="/cuidados-joias" 
                 className="group flex items-center text-gray-300 hover:text-gold transition-all duration-300 text-sm font-medium tracking-wide"
               >
                 <span className="w-2 h-[1px] bg-gold mr-3 transition-all duration-300 group-hover:w-4"></span>

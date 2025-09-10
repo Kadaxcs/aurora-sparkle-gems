@@ -17,6 +17,8 @@ import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import ProductDetail from "./pages/ProductDetail";
 import Page from "./pages/Page";
+import JoiasPersonalizadas from "./pages/JoiasPersonalizadas";
+import CuidadosJoias from "./pages/CuidadosJoias";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,8 @@ const App = () => (
           <Route path="/pedido-confirmado" element={<OrderConfirmation />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/joias-personalizadas" element={<JoiasPersonalizadas />} />
+          <Route path="/cuidados-joias" element={<CuidadosJoias />} />
           <Route path="/page/:slug" element={<Page />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

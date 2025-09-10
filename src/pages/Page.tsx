@@ -107,26 +107,38 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
-          <Button variant="ghost" asChild className="mb-6">
+          <Button variant="ghost" asChild className="mb-8 text-gold hover:text-gold-dark">
             <Link to="/">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar ao início
             </Link>
           </Button>
           
-          <article className="prose prose-lg max-w-none">
-            <h1 className="text-4xl font-serif font-bold text-primary mb-6">
-              {page.title}
-            </h1>
+          <article className="space-y-8">
+            <header className="text-center space-y-4 pb-8 border-b border-gold/20">
+              <h1 className="text-5xl font-serif font-bold bg-gradient-gold bg-clip-text text-transparent">
+                {page.title}
+              </h1>
+              <div className="w-24 h-[2px] bg-gradient-gold mx-auto"></div>
+            </header>
             
-            <div 
-              className="content text-foreground leading-relaxed"
-              dangerouslySetInnerHTML={{ 
-                __html: page.content.replace(/\n/g, '<br />').replace(/##\s*(.*)/g, '<h2 class="text-2xl font-semibold mt-8 mb-4 text-primary">$1</h2>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/^\-\s+(.*)/gm, '<li class="ml-4">$1</li>').replace(/(<li.*>.*<\/li>)/s, '<ul class="list-disc pl-6 space-y-2 mb-4">$1</ul>') 
-              }}
-            />
+            <div className="prose prose-lg max-w-none text-foreground">
+              <div 
+                className="formatted-content space-y-6 text-lg leading-relaxed font-sans"
+                dangerouslySetInnerHTML={{ 
+                  __html: page.content
+                    .replace(/\n\n/g, '</p><p class="mb-6">')
+                    .replace(/\n/g, '<br />')
+                    .replace(/##\s*(.*)/g, '<h2 class="text-3xl font-serif font-semibold mt-12 mb-6 text-gold border-b border-gold/20 pb-3">$1</h2>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gold font-semibold">$1</strong>')
+                    .replace(/^\-\s+(.*)/gm, '<li class="ml-6 mb-2 text-gray-700">$1</li>')
+                    .replace(/(<li.*>.*<\/li>)/s, '<ul class="list-disc pl-8 space-y-3 mb-8 text-gray-700">$1</ul>')
+                    .replace(/^(.*)$/gm, '<p class="mb-6 text-gray-700 leading-relaxed">$1</p>')
+                }}
+              />
+            </div>
           </article>
         </div>
       </main>
