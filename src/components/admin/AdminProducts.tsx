@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AddProductDialog } from "./AddProductDialog";
+import { DeleteProductDialog } from "./DeleteProductDialog";
 
 interface Product {
   id: string;
@@ -26,13 +28,23 @@ interface Product {
   created_at: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 export function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
@@ -53,6 +65,21 @@ export function AdminProducts() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
     }
   };
 
@@ -83,6 +110,41 @@ export function AdminProducts() {
     }
   };
 
+  const handleDeleteProduct = async () => {
+    if (!productToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productToDelete.id);
+
+      if (error) throw error;
+
+      setProducts(products.filter(p => p.id !== productToDelete.id));
+      
+      toast({
+        title: "Sucesso",
+        description: "Produto excluído com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao excluir produto:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o produto",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
+    }
+  };
+
+  const openDeleteDialog = (product: Product) => {
+    setProductToDelete(product);
+    setDeleteDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -98,7 +160,10 @@ export function AdminProducts() {
           <h1 className="text-3xl font-serif text-foreground">Produtos</h1>
           <p className="text-muted-foreground">Gerencie o catálogo de produtos</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button 
+          className="bg-primary hover:bg-primary/90"
+          onClick={() => setAddDialogOpen(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Novo Produto
         </Button>
@@ -159,7 +224,12 @@ export function AdminProducts() {
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openDeleteDialog(product)}
+                        className="hover:bg-destructive hover:text-destructive-foreground"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -170,6 +240,20 @@ export function AdminProducts() {
           </Table>
         </CardContent>
       </Card>
+
+      <AddProductDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onProductCreated={fetchProducts}
+        categories={categories}
+      />
+
+      <DeleteProductDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteProduct}
+        productName={productToDelete?.name || ""}
+      />
     </div>
   );
 }
