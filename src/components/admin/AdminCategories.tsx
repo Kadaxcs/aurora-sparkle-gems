@@ -14,6 +14,8 @@ import { Plus, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddCategoryDialog } from "./AddCategoryDialog";
+import { EditCategoryDialog } from "./EditCategoryDialog";
+import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
 
 interface Category {
   id: string;
@@ -29,6 +31,9 @@ export function AdminCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -81,6 +86,16 @@ export function AdminCategories() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setSelectedCategory(category);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteCategory = (category: Category) => {
+    setSelectedCategory(category);
+    setDeleteDialogOpen(true);
   };
 
   if (loading) {
@@ -141,10 +156,18 @@ export function AdminCategories() {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditCategory(category)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteCategory(category)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -160,6 +183,20 @@ export function AdminCategories() {
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         onCategoryCreated={fetchCategories}
+      />
+
+      <EditCategoryDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onCategoryUpdated={fetchCategories}
+        category={selectedCategory}
+      />
+
+      <DeleteCategoryDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onCategoryDeleted={fetchCategories}
+        category={selectedCategory}
       />
     </div>
   );
