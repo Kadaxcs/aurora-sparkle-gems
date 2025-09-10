@@ -47,6 +47,17 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          light: "hsl(var(--gold-light))",
+          dark: "hsl(var(--gold-dark))",
+        },
+        champagne: "hsl(var(--champagne))",
+        bronze: "hsl(var(--bronze))",
+        hero: {
+          bg: "hsl(var(--hero-bg))",
+          text: "hsl(var(--hero-text))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -62,6 +73,20 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      fontFamily: {
+        serif: ['Playfair Display', 'Georgia', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      backgroundImage: {
+        'gradient-gold': 'var(--gradient-gold)',
+        'gradient-dark': 'var(--gradient-dark)',
+        'gradient-luxury': 'var(--gradient-luxury)',
+      },
+      boxShadow: {
+        'gold': 'var(--shadow-gold)',
+        'elegant': 'var(--shadow-elegant)',
+        'luxury': 'var(--shadow-luxury)',
       },
       keyframes: {
         "accordion-down": {
