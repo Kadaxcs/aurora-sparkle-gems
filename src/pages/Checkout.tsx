@@ -297,10 +297,25 @@ export default function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!checkoutData.firstName || !checkoutData.email || !checkoutData.zipCode) {
+    // Enhanced validation
+    if (!checkoutData.firstName || !checkoutData.lastName || !checkoutData.email || 
+        !checkoutData.phone || !checkoutData.document || !checkoutData.zipCode || 
+        !checkoutData.street || !checkoutData.number || !checkoutData.neighborhood || 
+        !checkoutData.city || !checkoutData.state) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios para finalizar a compra",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic CPF validation (11 digits)
+    const cpfNumbers = checkoutData.document.replace(/\D/g, '');
+    if (cpfNumbers.length !== 11) {
+      toast({
+        title: "CPF inválido",
+        description: "Por favor, digite um CPF válido com 11 dígitos",
         variant: "destructive",
       });
       return;
@@ -393,6 +408,7 @@ export default function Checkout() {
                         id="phone"
                         value={checkoutData.phone}
                         onChange={(e) => setCheckoutData({ ...checkoutData, phone: e.target.value })}
+                        placeholder="(11) 99999-9999"
                         required
                       />
                     </div>
@@ -403,6 +419,7 @@ export default function Checkout() {
                       id="document"
                       value={checkoutData.document}
                       onChange={(e) => setCheckoutData({ ...checkoutData, document: e.target.value })}
+                      placeholder="000.000.000-00"
                       required
                     />
                   </div>

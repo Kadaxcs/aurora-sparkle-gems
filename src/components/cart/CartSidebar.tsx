@@ -237,19 +237,45 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
             </div>
 
             <div className="border-t pt-4 space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Total:</span>
-                <span className="font-semibold text-lg">
-                  R$ {getTotal().toFixed(2)}
-                </span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span>Subtotal:</span>
+                  <span>R$ {getTotal().toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-muted-foreground">
+                  <span>Frete:</span>
+                  <span>Calculado no checkout</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Total:</span>
+                  <span className="font-semibold text-lg text-primary">
+                    R$ {getTotal().toFixed(2)}
+                  </span>
+                </div>
               </div>
               
-              <Button 
-                className="w-full bg-primary hover:bg-primary/90"
-                onClick={() => window.location.href = '/checkout'}
-              >
-                Finalizar Compra
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  className="w-full bg-primary hover:bg-primary/90 h-12"
+                  onClick={() => {
+                    onOpenChange(false);
+                    window.location.href = '/checkout';
+                  }}
+                >
+                  Finalizar Compra
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    onOpenChange(false);
+                    window.location.href = '/products';
+                  }}
+                >
+                  Continuar Comprando
+                </Button>
+              </div>
             </div>
           </>
         )}

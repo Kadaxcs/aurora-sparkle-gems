@@ -27,36 +27,34 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Links Rápidos */}
           <div className="space-y-4">
-            <h4 className="font-medium text-gold">Links Rápidos</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/page/sobre-nos" className="text-gray-300 hover:text-gold transition-colors">
-                  Sobre Nós
-                </Link>
-              </li>
-              <li>
-                <Link to="/aneis" className="text-gray-300 hover:text-gold transition-colors">
-                  Coleções
-                </Link>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-gold transition-colors">
-                  Joias Personalizadas
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-gold transition-colors">
-                  Cuidados com as Joias
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-gold transition-colors">
-                  Contato
-                </a>
-              </li>
-            </ul>
+            <h4 className="font-semibold text-gold text-lg mb-6">Links Rápidos</h4>
+            <div className="space-y-3">
+              <Link to="/page/sobre-nos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Sobre Nós
+              </Link>
+              <Link to="/aneis" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Anéis
+              </Link>
+              <Link to="/brincos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Brincos
+              </Link>
+              <Link to="/colares" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Colares
+              </Link>
+              <Link to="/pulseiras" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Pulseiras
+              </Link>
+              <Link to="/conjuntos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Conjuntos
+              </Link>
+              <Link to="/page/sobre-nos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Joias Personalizadas
+              </Link>
+              <Link to="/page/sobre-nos" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Cuidados com as Joias
+              </Link>
+            </div>
           </div>
 
           {/* Atendimento */}
@@ -80,41 +78,38 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Newsletter */}
+          {/* Políticas */}
           <div className="space-y-4">
-            <h4 className="font-medium text-gold">Newsletter</h4>
-            <p className="text-sm text-gray-300">
-              Receba novidades sobre nossas coleções e promoções exclusivas.
-            </p>
-            <div className="space-y-2">
-              <Input 
-                type="email" 
-                placeholder="Seu email"
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-              />
-              <Button className="w-full bg-gradient-gold hover:opacity-90 text-black font-medium">
-                Inscrever-se
-              </Button>
+            <h4 className="font-semibold text-gold text-lg mb-6">Políticas</h4>
+            <div className="space-y-3">
+              <Link to="/page/politica-privacidade" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Política de Privacidade
+              </Link>
+              <Link to="/page/termos-condicoes" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Termos e Condições
+              </Link>
+              <Link to="/page/politica-troca-devolucao" className="block text-gray-300 hover:text-gold transition-colors duration-300 text-sm font-medium">
+                Trocas e Devoluções
+              </Link>
+              <div className="pt-2">
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Envios para todo o Brasil com segurança e agilidade. Parcele em até 12x sem juros.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         <Separator className="my-8 bg-white/20" />
 
-        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 text-center md:text-left">
           <div className="text-sm text-gray-300">
             © 2024 Bella Aurora Joias. Todos os direitos reservados.
           </div>
-          <div className="flex space-x-6 text-sm">
-            <Link to="/page/politica-privacidade" className="text-gray-300 hover:text-gold transition-colors">
-              Política de Privacidade
-            </Link>
-            <Link to="/page/termos-condicoes" className="text-gray-300 hover:text-gold transition-colors">
-              Termos de Uso
-            </Link>
-            <Link to="/page/politica-troca-devolucao" className="text-gray-300 hover:text-gold transition-colors">
-              Trocas e Devoluções
-            </Link>
+          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6 text-sm">
+            <span className="text-gray-400">💎 Joias autênticas com certificado</span>
+            <span className="text-gray-400">🚚 Frete grátis acima de R$ 200</span>
+            <span className="text-gray-400">🔒 Compra 100% segura</span>
           </div>
         </div>
       </div>

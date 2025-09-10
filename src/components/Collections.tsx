@@ -12,6 +12,7 @@ const collections = [
     subtitle: "Elegância em cada detalhe",
     image: earringsImg,
     items: "48+ peças",
+    path: "/brincos",
   },
   {
     id: 2,
@@ -19,6 +20,7 @@ const collections = [
     subtitle: "Charme e sofisticação",
     image: necklaceImg,
     items: "32+ peças",
+    path: "/colares",
   },
   {
     id: 3,
@@ -26,6 +28,7 @@ const collections = [
     subtitle: "Delicadeza em ouro",
     image: braceletsImg,
     items: "24+ peças",
+    path: "/pulseiras",
   },
 ];
 
@@ -69,7 +72,7 @@ export const Collections = () => {
                     className="mt-4 bg-white/20 hover:bg-white/30 text-white border-white/30"
                     asChild
                   >
-                    <Link to="/products">Ver Coleção</Link>
+                    <Link to={collection.path}>Ver Coleção</Link>
                   </Button>
                 </div>
 

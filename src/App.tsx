@@ -37,6 +37,7 @@ const App = () => (
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/produto/:productId" element={<ProductDetail />} />
           <Route path="/pedido-confirmado/:orderId" element={<OrderConfirmation />} />
+          <Route path="/pedido-confirmado" element={<OrderConfirmation />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/page/:slug" element={<Page />} />

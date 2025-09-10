@@ -8,15 +8,19 @@ import {
   Heart, 
   User, 
   Menu
-} from "lucide-react";
+ } from "lucide-react";
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { UserAccountDropdown } from "@/components/auth/UserAccountDropdown";
 import { CartSidebar } from "@/components/cart/CartSidebar";
+import { SearchDialog } from "@/components/SearchDialog";
+import { WishlistDialog } from "@/components/WishlistDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export function Header() {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [wishlistOpen, setWishlistOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [cartItemsCount, setCartItemsCount] = useState(0);
 
@@ -84,13 +88,20 @@ export function Header() {
             <Link to="/conjuntos" className="text-sm font-medium text-foreground hover:text-gold transition-colors">Conjuntos</Link>
           </nav>
 
-          {/* Actions */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setSearchOpen(true)}
+            >
               <Search className="h-5 w-5" />
             </Button>
             
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setWishlistOpen(true)}
+            >
               <Heart className="h-5 w-5" />
             </Button>
             
@@ -130,6 +141,17 @@ export function Header() {
       <AuthDialog 
         open={authDialogOpen} 
         onOpenChange={setAuthDialogOpen} 
+      />
+      
+      <SearchDialog 
+        open={searchOpen} 
+        onOpenChange={setSearchOpen} 
+      />
+      
+      <WishlistDialog 
+        open={wishlistOpen} 
+        onOpenChange={setWishlistOpen} 
+        user={user}
       />
       
       <CartSidebar 
