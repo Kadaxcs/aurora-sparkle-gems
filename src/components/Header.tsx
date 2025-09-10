@@ -67,15 +67,15 @@ export function Header() {
 
 
   return (
-    <header className="w-full bg-secondary/30 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
+    <header className="w-full bg-white backdrop-blur-sm border-b border-border/50 sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
+          <Link to="/" className="flex items-center">
             <img 
               src="/lovable-uploads/0ee9c41c-0192-4940-9010-c5a7a36aa4ce.png" 
               alt="Bella Aurora Joias" 
-              className="h-12 w-auto"
+              className="h-14 w-auto object-contain"
             />
           </Link>
 
