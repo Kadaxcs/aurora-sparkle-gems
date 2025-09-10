@@ -124,18 +124,40 @@ export default function Page() {
               <div className="w-24 h-[2px] bg-gradient-gold mx-auto"></div>
             </header>
             
-            <div className="prose prose-lg max-w-none text-foreground">
+            <div className="prose prose-lg max-w-none">
               <div 
-                className="formatted-content space-y-6 text-lg leading-relaxed font-sans"
+                className="formatted-content space-y-6 text-base leading-relaxed font-sans"
                 dangerouslySetInnerHTML={{ 
                   __html: page.content
-                    .replace(/\n\n/g, '</p><p class="mb-6">')
+                    // Quebra dupla vira parágrafo
+                    .replace(/\n\n+/g, '</p><p class="mb-6 text-gray-700 leading-relaxed">')
+                    // Quebra simples vira <br>
                     .replace(/\n/g, '<br />')
-                    .replace(/##\s*(.*)/g, '<h2 class="text-3xl font-serif font-semibold mt-12 mb-6 text-gold border-b border-gold/20 pb-3">$1</h2>')
+                    // Títulos com ##
+                    .replace(/##\s*(.*?)(?=<br|$)/g, '<h2 class="text-3xl font-serif font-semibold mt-12 mb-6 text-gold border-b border-gold/20 pb-3">$1</h2>')
+                    // Títulos com ###
+                    .replace(/###\s*(.*?)(?=<br|$)/g, '<h3 class="text-2xl font-serif font-semibold mt-8 mb-4 text-gold">$1</h3>')
+                    // Negrito
                     .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gold font-semibold">$1</strong>')
-                    .replace(/^\-\s+(.*)/gm, '<li class="ml-6 mb-2 text-gray-700">$1</li>')
-                    .replace(/(<li.*>.*<\/li>)/s, '<ul class="list-disc pl-8 space-y-3 mb-8 text-gray-700">$1</ul>')
-                    .replace(/^(.*)$/gm, '<p class="mb-6 text-gray-700 leading-relaxed">$1</p>')
+                    // Listas começando com -
+                    .replace(/(?:^|\n)(-\s+.*?)(?=\n(?![^\n]*^-\s)|$)/gms, (match) => {
+                      const items = match.trim().split('\n').map(item => 
+                        item.replace(/^-\s+/, '<li class="mb-2 text-gray-700">') + '</li>'
+                      ).join('');
+                      return '<ul class="list-disc pl-8 space-y-2 mb-6 text-gray-700">' + items + '</ul>';
+                    })
+                    // Listas numeradas
+                    .replace(/(?:^|\n)(\d+\.\s+.*?)(?=\n(?![^\n]*^\d+\.\s)|$)/gms, (match) => {
+                      const items = match.trim().split('\n').map(item => 
+                        item.replace(/^\d+\.\s+/, '<li class="mb-2 text-gray-700">') + '</li>'
+                      ).join('');
+                      return '<ol class="list-decimal pl-8 space-y-2 mb-6 text-gray-700">' + items + '</ol>';
+                    })
+                    // Texto restante em parágrafos
+                    .replace(/^(?!<[hou]|<\/[hou]|<li|<\/li)(.+)$/gm, '<p class="mb-6 text-gray-700 leading-relaxed">$1</p>')
+                    // Limpar tags vazias
+                    .replace(/<p[^>]*><\/p>/g, '')
+                    .replace(/<p[^>]*>\s*<\/p>/g, '')
                 }}
               />
             </div>
