@@ -15,6 +15,7 @@ import Bracelets from "./pages/Bracelets";
 import Sets from "./pages/Sets";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import ProductDetail from "./pages/ProductDetail";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/pulseiras" element={<Bracelets />} />
           <Route path="/conjuntos" element={<Sets />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/produto/:productId" element={<ProductDetail />} />
           <Route path="/pedido-confirmado/:orderId" element={<OrderConfirmation />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
