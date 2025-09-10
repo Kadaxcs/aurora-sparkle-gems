@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { OrderDetailDialog } from "./OrderDetailDialog";
 
 interface Order {
   id: string;
@@ -20,13 +21,22 @@ interface Order {
   status: string;
   payment_status: string;
   total: number;
+  subtotal: number;
+  shipping_cost?: number;
+  discount_amount?: number;
   created_at: string;
   user_id?: string;
+  shipping_address?: any;
+  billing_address?: any;
+  notes?: string;
+  tracking_code?: string;
 }
 
 export function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [orderToView, setOrderToView] = useState<Order | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,6 +101,11 @@ export function AdminOrders() {
     );
   };
 
+  const openDetailDialog = (order: Order) => {
+    setOrderToView(order);
+    setDetailDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -142,10 +157,18 @@ export function AdminOrders() {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openDetailDialog(order)}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openDetailDialog(order)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                     </div>
@@ -156,6 +179,13 @@ export function AdminOrders() {
           </Table>
         </CardContent>
       </Card>
+
+      <OrderDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        onOrderUpdated={fetchOrders}
+        order={orderToView}
+      />
     </div>
   );
 }

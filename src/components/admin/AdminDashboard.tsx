@@ -1,7 +1,33 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Package, ShoppingCart, Users, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface RecentOrder {
+  id: string;
+  order_number: string;
+  status: string;
+  payment_status: string;
+  total: number;
+  created_at: string;
+}
+
+interface BestProduct {
+  id: string;
+  name: string;
+  total_sold: number;
+  revenue: number;
+}
 
 export function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -10,46 +36,136 @@ export function AdminDashboard() {
     totalUsers: 0,
     totalRevenue: 0
   });
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [bestProducts, setBestProducts] = useState<BestProduct[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // Buscar total de produtos
-        const { count: productsCount } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true });
+    fetchStats();
+    fetchRecentOrders();
+    fetchBestProducts();
+  }, []);
 
-        // Buscar total de pedidos
-        const { count: ordersCount } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true });
+  const fetchStats = async () => {
+    try {
+      // Buscar total de produtos
+      const { count: productsCount } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true });
 
-        // Buscar total de usuários
-        const { count: usersCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
+      // Buscar total de pedidos
+      const { count: ordersCount } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true });
 
-        // Buscar receita total
-        const { data: revenueData } = await supabase
-          .from('orders')
-          .select('total')
-          .eq('payment_status', 'paid');
+      // Buscar total de usuários
+      const { count: usersCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
 
-        const totalRevenue = revenueData?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
+      // Buscar receita total
+      const { data: revenueData } = await supabase
+        .from('orders')
+        .select('total')
+        .eq('payment_status', 'paid');
 
-        setStats({
-          totalProducts: productsCount || 0,
-          totalOrders: ordersCount || 0,
-          totalUsers: usersCount || 0,
-          totalRevenue
-        });
-      } catch (error) {
-        console.error('Erro ao buscar estatísticas:', error);
-      }
+      const totalRevenue = revenueData?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
+
+      setStats({
+        totalProducts: productsCount || 0,
+        totalOrders: ordersCount || 0,
+        totalUsers: usersCount || 0,
+        totalRevenue
+      });
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as estatísticas",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchRecentOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id, order_number, status, payment_status, total, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setRecentOrders(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar pedidos recentes:', error);
+    }
+  };
+
+  const fetchBestProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('order_items')
+        .select(`
+          product_id,
+          quantity,
+          price,
+          products!inner(name)
+        `);
+
+      if (error) throw error;
+
+      // Process data to get best selling products
+      const productStats: { [key: string]: { name: string; total_sold: number; revenue: number } } = {};
+      
+      data?.forEach(item => {
+        const productId = item.product_id;
+        const productName = (item.products as any)?.name || 'Produto desconhecido';
+        
+        if (!productStats[productId]) {
+          productStats[productId] = {
+            name: productName,
+            total_sold: 0,
+            revenue: 0
+          };
+        }
+        
+        productStats[productId].total_sold += item.quantity;
+        productStats[productId].revenue += item.quantity * item.price;
+      });
+
+      const bestProductsList = Object.entries(productStats)
+        .map(([id, stats]) => ({
+          id,
+          ...stats
+        }))
+        .sort((a, b) => b.total_sold - a.total_sold)
+        .slice(0, 5);
+
+      setBestProducts(bestProductsList);
+    } catch (error) {
+      console.error('Erro ao buscar produtos mais vendidos:', error);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusMap = {
+      pending: { label: "Pendente", variant: "secondary" as const },
+      processing: { label: "Processando", variant: "default" as const },
+      shipped: { label: "Enviado", variant: "outline" as const },
+      delivered: { label: "Entregue", variant: "default" as const },
+      cancelled: { label: "Cancelado", variant: "destructive" as const },
     };
 
-    fetchStats();
-  }, []);
+    const statusInfo = statusMap[status as keyof typeof statusMap] || 
+      { label: status, variant: "secondary" as const };
+
+    return (
+      <Badge variant={statusInfo.variant}>
+        {statusInfo.label}
+      </Badge>
+    );
+  };
 
   const statCards = [
     {
@@ -109,7 +225,38 @@ export function AdminDashboard() {
             <CardTitle className="text-card-foreground">Pedidos Recentes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Implementação em desenvolvimento...</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Número</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentOrders.length > 0 ? (
+                  recentOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">
+                        {order.order_number}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(order.status)}
+                      </TableCell>
+                      <TableCell>
+                        R$ {order.total.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                      Nenhum pedido encontrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
 
@@ -118,7 +265,38 @@ export function AdminDashboard() {
             <CardTitle className="text-card-foreground">Produtos Mais Vendidos</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Implementação em desenvolvimento...</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Vendidos</TableHead>
+                  <TableHead>Receita</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bestProducts.length > 0 ? (
+                  bestProducts.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">
+                        {product.name}
+                      </TableCell>
+                      <TableCell>
+                        {product.total_sold}
+                      </TableCell>
+                      <TableCell>
+                        R$ {product.revenue.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                      Nenhum produto vendido
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>

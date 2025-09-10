@@ -14,6 +14,7 @@ import { Plus, Edit, Trash2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddProductDialog } from "./AddProductDialog";
+import { EditProductDialog } from "./EditProductDialog";
 import { DeleteProductDialog } from "./DeleteProductDialog";
 
 interface Product {
@@ -38,8 +39,10 @@ export function AdminProducts() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -145,6 +148,11 @@ export function AdminProducts() {
     setDeleteDialogOpen(true);
   };
 
+  const openEditDialog = (product: Product) => {
+    setProductToEdit(product);
+    setEditDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -221,7 +229,11 @@ export function AdminProducts() {
                       <Button variant="outline" size="sm">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openEditDialog(product)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
@@ -246,6 +258,14 @@ export function AdminProducts() {
         onOpenChange={setAddDialogOpen}
         onProductCreated={fetchProducts}
         categories={categories}
+      />
+
+      <EditProductDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onProductUpdated={fetchProducts}
+        categories={categories}
+        product={productToEdit}
       />
 
       <DeleteProductDialog

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AddCategoryDialog } from "./AddCategoryDialog";
 
 interface Category {
   id: string;
@@ -27,6 +28,7 @@ interface Category {
 export function AdminCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -96,7 +98,10 @@ export function AdminCategories() {
           <h1 className="text-3xl font-serif text-foreground">Categorias</h1>
           <p className="text-muted-foreground">Gerencie as categorias de produtos</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button 
+          className="bg-primary hover:bg-primary/90"
+          onClick={() => setAddDialogOpen(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Nova Categoria
         </Button>
@@ -150,6 +155,12 @@ export function AdminCategories() {
           </Table>
         </CardContent>
       </Card>
+
+      <AddCategoryDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onCategoryCreated={fetchCategories}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { EditUserDialog } from "./EditUserDialog";
 
 interface Profile {
   id: string;
@@ -27,6 +28,8 @@ interface Profile {
 export function AdminUsers() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<Profile | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -68,6 +71,11 @@ export function AdminUsers() {
         {roleInfo.label}
       </Badge>
     );
+  };
+
+  const openEditDialog = (user: Profile) => {
+    setUserToEdit(user);
+    setEditDialogOpen(true);
   };
 
   if (loading) {
@@ -123,7 +131,11 @@ export function AdminUsers() {
                       <Button variant="outline" size="sm">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openEditDialog(profile)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                     </div>
@@ -134,6 +146,13 @@ export function AdminUsers() {
           </Table>
         </CardContent>
       </Card>
+
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onUserUpdated={fetchProfiles}
+        user={userToEdit}
+      />
     </div>
   );
 }

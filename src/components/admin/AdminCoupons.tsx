@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AddCouponDialog } from "./AddCouponDialog";
 
 interface Coupon {
   id: string;
@@ -30,6 +31,7 @@ interface Coupon {
 export function AdminCoupons() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -106,7 +108,10 @@ export function AdminCoupons() {
           <h1 className="text-3xl font-serif text-foreground">Cupons</h1>
           <p className="text-muted-foreground">Gerencie cupons de desconto</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button 
+          className="bg-primary hover:bg-primary/90"
+          onClick={() => setAddDialogOpen(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Novo Cupom
         </Button>
@@ -174,6 +179,12 @@ export function AdminCoupons() {
           </Table>
         </CardContent>
       </Card>
+
+      <AddCouponDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onCouponCreated={fetchCoupons}
+      />
     </div>
   );
 }
