@@ -5,7 +5,8 @@ import {
   FolderOpen, 
   Ticket, 
   Users,
-  LogOut
+  LogOut,
+  Upload
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "products", label: "Produtos", icon: Package },
+  { id: "import", label: "Importar Produtos", icon: Upload },
   { id: "orders", label: "Pedidos", icon: ShoppingCart },
   { id: "categories", label: "Categorias", icon: FolderOpen },
   { id: "coupons", label: "Cupons", icon: Ticket },
