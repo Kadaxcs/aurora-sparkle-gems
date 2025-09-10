@@ -186,85 +186,20 @@ export default function Checkout() {
     setSubmitting(true);
 
     try {
-      // Criar pedido
-      const orderData = {
-        user_id: user.id,
-        status: 'pending' as const,
-        payment_status: 'pending' as const,
-        payment_method: checkoutData.paymentMethod,
-        subtotal: getSubtotal(),
-        shipping_cost: getShippingCost(),
-        total: getTotal(),
-        order_number: `ORD-${Date.now()}`,
-        shipping_address: {
-          street: checkoutData.street,
-          number: checkoutData.number,
-          complement: checkoutData.complement,
-          neighborhood: checkoutData.neighborhood,
-          city: checkoutData.city,
-          state: checkoutData.state,
-          zip_code: checkoutData.zipCode,
-        },
-        billing_address: {
-          street: checkoutData.street,
-          number: checkoutData.number,
-          complement: checkoutData.complement,
-          neighborhood: checkoutData.neighborhood,
-          city: checkoutData.city,
-          state: checkoutData.state,
-          zip_code: checkoutData.zipCode,
-        },
-        notes: checkoutData.notes,
-      };
-
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert(orderData)
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Criar itens do pedido
-      const orderItems = cartItems.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: getItemPrice(item),
-        total: getItemPrice(item) * item.quantity,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Limpar carrinho
-      const { error: clearCartError } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (clearCartError) throw clearCartError;
-
-      // Enviar pedido para Loja Integrada
-      try {
-        await supabase.functions.invoke('create-order-loja-integrada', {
-          body: { orderId: order.id }
-        });
-        console.log('Pedido enviado para Loja Integrada');
-      } catch (lojaError) {
-        console.warn('Erro ao enviar para Loja Integrada:', lojaError);
-        // Não falha o checkout se a integração com Loja Integrada falhar
+      // Validações básicas
+      if (!checkoutData.firstName || !checkoutData.lastName || !checkoutData.email) {
+        throw new Error("Preencha todos os campos obrigatórios");
       }
 
-      toast({
-        title: "Pedido realizado com sucesso!",
-        description: `Pedido #${order.order_number} foi criado. Você receberá um e-mail com os detalhes.`,
-      });
+      if (!checkoutData.street || !checkoutData.city || !checkoutData.zipCode) {
+        throw new Error("Preencha o endereço completo");
+      }
 
-      navigate(`/pedido-confirmado/${order.id}`);
+      // Criar pedido no banco primeiro
+      const order = await createOrder();
+
+      // Redirecionar para MercadoPago
+      await createMercadoPagoPayment(order);
 
     } catch (error: any) {
       console.error('Erro ao processar pedido:', error);
@@ -273,8 +208,148 @@ export default function Checkout() {
         description: error.message || "Não foi possível processar seu pedido",
         variant: "destructive",
       });
-    } finally {
       setSubmitting(false);
+    }
+  };
+
+  const createOrder = async () => {
+    // Criar pedido
+    const orderData = {
+      user_id: user.id,
+      status: 'pending' as const,
+      payment_status: 'pending' as const,
+      payment_method: checkoutData.paymentMethod,
+      subtotal: getSubtotal(),
+      shipping_cost: getShippingCost(),
+      total: getTotal(),
+      order_number: `ORD-${Date.now()}`,
+      shipping_address: {
+        street: checkoutData.street,
+        number: checkoutData.number,
+        complement: checkoutData.complement,
+        neighborhood: checkoutData.neighborhood,
+        city: checkoutData.city,
+        state: checkoutData.state,
+        zip_code: checkoutData.zipCode,
+      },
+      billing_address: {
+        street: checkoutData.street,
+        number: checkoutData.number,
+        complement: checkoutData.complement,
+        neighborhood: checkoutData.neighborhood,
+        city: checkoutData.city,
+        state: checkoutData.state,
+        zip_code: checkoutData.zipCode,
+      },
+      notes: checkoutData.notes,
+    };
+
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert(orderData)
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Criar itens do pedido
+    const orderItems = cartItems.map(item => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      price: getItemPrice(item),
+      total: getItemPrice(item) * item.quantity,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) throw itemsError;
+
+    // Limpar carrinho
+    const { error: clearCartError } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('user_id', user.id);
+
+    if (clearCartError) throw clearCartError;
+
+    // Enviar pedido para Loja Integrada
+    try {
+      await supabase.functions.invoke('create-order-loja-integrada', {
+        body: { orderId: order.id }
+      });
+      console.log('Pedido enviado para Loja Integrada');
+    } catch (lojaError) {
+      console.warn('Erro ao enviar para Loja Integrada:', lojaError);
+      // Não falha o checkout se a integração com Loja Integrada falhar
+    }
+
+    return order;
+  };
+
+  const createMercadoPagoPayment = async (order: any) => {
+    try {
+      // Preparar dados para MercadoPago
+      const items = cartItems.map(item => ({
+        title: item.products.name,
+        quantity: item.quantity,
+        unit_price: getItemPrice(item),
+        currency_id: "BRL",
+      }));
+
+      const paymentData = {
+        items,
+        payer: {
+          name: checkoutData.firstName,
+          surname: checkoutData.lastName,
+          email: checkoutData.email,
+          phone: checkoutData.phone ? {
+            area_code: checkoutData.phone.substring(0, 2),
+            number: checkoutData.phone.substring(2),
+          } : undefined,
+          address: {
+            street_name: checkoutData.street,
+            street_number: checkoutData.number,
+            zip_code: checkoutData.zipCode,
+            city: checkoutData.city,
+            state: checkoutData.state,
+            country: "BR",
+          },
+        },
+        back_urls: {
+          success: `${window.location.origin}/pedido-confirmado/${order.id}`,
+          failure: `${window.location.origin}/checkout`,
+          pending: `${window.location.origin}/pedido-confirmado/${order.id}`,
+        },
+        auto_return: "approved",
+        payment_methods: {
+          excluded_payment_methods: [],
+          excluded_payment_types: [],
+          installments: 12,
+        },
+        external_reference: order.order_number,
+      };
+
+      const { data, error } = await supabase.functions.invoke('create-mercadopago-payment', {
+        body: paymentData,
+      });
+
+      if (error) throw error;
+
+      // Redirecionar para MercadoPago
+      if (data?.sandbox_init_point) {
+        window.location.href = data.sandbox_init_point;
+      } else if (data?.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        throw new Error("URL de pagamento não encontrada");
+      }
+
+    } catch (error: any) {
+      console.error('Erro ao criar pagamento MercadoPago:', error);
+      throw new Error("Erro ao processar pagamento: " + error.message);
     }
   };
 
