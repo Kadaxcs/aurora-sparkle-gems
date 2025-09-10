@@ -116,11 +116,6 @@ export function Header() {
                 <Button variant="ghost" size="icon" onClick={handleSignOut}>
                   <LogOut className="h-5 w-5" />
                 </Button>
-                {user.user_metadata?.role === 'admin' && (
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/admin">Admin</Link>
-                  </Button>
-                )}
               </div>
             ) : (
               <Button 
