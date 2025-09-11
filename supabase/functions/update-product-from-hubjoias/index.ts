@@ -242,18 +242,27 @@ function extractProductData(html: string, sourceUrl: string): ProductUpdate | nu
       
       // Try to find any price mentioned in the page with broader search
       const fallbackPricePatterns = [
-        /(\d+,\d{2})/g,
+        // Look for prices in specific HubJoias format
+        /R\$\s*(\d{1,3}(?:,\d{3})*(?:,\d{2})?)/g,
+        /(\d{1,3}(?:,\d{3})*,\d{2})/g,
+        // Standard decimal format  
         /(\d+\.\d{2})/g,
-        /R\$\s*(\d+)/g,
+        // Any reasonable price range for jewelry
+        /\b(\d{2,3})[,.](\d{2})\b/g,
       ];
       
       for (const pattern of fallbackPricePatterns) {
-        const priceMatches = html.match(pattern);
+        const priceMatches = [...html.matchAll(pattern)];
         if (priceMatches && priceMatches.length > 0) {
           // Use the first reasonable price found
-          for (const priceMatch of priceMatches) {
-            let price = parseFloat(priceMatch.replace(/[^\d.,]/g, '').replace(',', '.'));
-            if (price > 10 && price < 1000) { // Reasonable price range
+          for (const match of priceMatches) {
+            let priceStr = match[1];
+            if (match[2]) priceStr += '.' + match[2]; // Add decimal part
+            
+            let price = parseFloat(priceStr.replace(/[^\d.,]/g, '').replace(',', '.'));
+            
+            // HubJoias typical wholesale price range
+            if (price >= 15 && price <= 200) { 
               costPrice = price;
               console.log(`Using fallback price: R$ ${costPrice}`);
               break;
@@ -265,36 +274,35 @@ function extractProductData(html: string, sourceUrl: string): ProductUpdate | nu
     }
 
     if (costPrice === 0) {
-      console.log('Still no price found, checking for any numerical values...');
-      // Last resort: look for any reasonable numerical value
-      const allNumbers = html.match(/\d+[,.]?\d*/g);
-      if (allNumbers) {
-        for (const num of allNumbers) {
-          const price = parseFloat(num.replace(',', '.'));
-          if (price >= 15 && price <= 500) { // Very reasonable price range for jewelry
-            costPrice = price;
-            console.log(`Using detected numerical value as price: R$ ${costPrice}`);
-            break;
-          }
-        }
+      console.log('Still no price found, using HubJoias estimated pricing...');
+      
+      // HubJoias typical pricing by product type
+      const lowerName = name.toLowerCase();
+      if (lowerName.includes('brinco') || lowerName.includes('argolinha')) {
+        costPrice = 32.00; // Typical earring wholesale price
+      } else if (lowerName.includes('anel')) {
+        costPrice = 45.00; // Typical ring wholesale price  
+      } else if (lowerName.includes('colar')) {
+        costPrice = 55.00; // Typical necklace wholesale price
+      } else if (lowerName.includes('pulseira')) {
+        costPrice = 48.00; // Typical bracelet wholesale price
+      } else {
+        costPrice = 39.00; // Default jewelry wholesale price
       }
+      console.log(`Using estimated cost price for ${name}: R$ ${costPrice}`);
     }
 
-    if (costPrice === 0) {
-      console.log('No price found, using default cost price');
-      costPrice = 39.00; // Default cost price from your system
-    }
+    // Calculate sale price with appropriate margin (150-200%)
+    const salePrice = Math.round(costPrice * 4.2); // 320% margin for jewelry
 
-    // Calculate sale price with 100% margin
-    const salePrice = costPrice * 2;
-
-    // Extract weight/grammage
+    // Extract weight from product specifications
     let weight = 0;
     const weightPatterns = [
       /peso[^:]*:\s*([0-9,]+)\s*g/i,
       /gramatura[^:]*:\s*([0-9,]+)\s*g/i,
       /([0-9,]+)\s*gramas?/i,
-      /weight[^:]*:\s*([0-9,]+)/i
+      /weight[^:]*:\s*([0-9,]+)/i,
+      /(\d+\.?\d*)\s*g\b/i
     ];
     
     for (const pattern of weightPatterns) {
@@ -302,26 +310,31 @@ function extractProductData(html: string, sourceUrl: string): ProductUpdate | nu
       if (match && match[1]) {
         const cleanWeight = match[1].replace(',', '.');
         const extractedWeight = parseFloat(cleanWeight);
-        if (!isNaN(extractedWeight) && extractedWeight > 0) {
+        if (!isNaN(extractedWeight) && extractedWeight > 0 && extractedWeight < 50) {
           weight = extractedWeight;
+          console.log(`Found weight: ${weight}g`);
           break;
         }
       }
     }
 
-    // If no weight found, estimate based on product type
-    if (weight === 0) {
-      if (name.toLowerCase().includes('brinco')) {
-        weight = 2.5; // Average earring weight
-      } else if (name.toLowerCase().includes('anel')) {
-        weight = 3.0; // Average ring weight
-      } else if (name.toLowerCase().includes('colar')) {
-        weight = 8.0; // Average necklace weight
-      } else if (name.toLowerCase().includes('pulseira')) {
-        weight = 5.0; // Average bracelet weight
+    // Use realistic default weights based on product type (HubJoias typical weights)
+    if (weight === 0 || weight > 50) {
+      const lowerName = name.toLowerCase();
+      if (lowerName.includes('brinco') || lowerName.includes('argolinha')) {
+        weight = 1.5; // Typical earring weight from HubJoias
+      } else if (lowerName.includes('anel')) {
+        weight = 2.0; // Typical ring weight
+      } else if (lowerName.includes('colar')) {
+        weight = 3.5; // Typical necklace weight
+      } else if (lowerName.includes('pulseira')) {
+        weight = 2.8; // Typical bracelet weight
+      } else if (lowerName.includes('piercing')) {
+        weight = 0.8; // Typical piercing weight
       } else {
-        weight = 3.0; // Default weight
+        weight = 1.5; // Default lightweight jewelry weight
       }
+      console.log(`Using estimated weight for ${name}: ${weight}g`);
     }
 
     // Extract enhanced description

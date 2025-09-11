@@ -424,20 +424,28 @@ export default function ProductDetail() {
                       <span className="font-medium">{product.weight}g</span>
                     </div>
                   )}
+                  <div className="flex justify-between">
+                    <span>Espessura:</span>
+                    <span className="font-medium">0,4cm</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Banho:</span>
+                    <span className="font-medium">10 Camadas de Ouro Branco (ródio)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Pedra:</span>
+                    <span className="font-medium">Zircônia</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Tecnologia:</span>
+                    <span className="font-medium">Antialérgica</span>
+                  </div>
                   {product.material && (
                     <div className="flex justify-between">
                       <span>Material:</span>
                       <span className="font-medium">{product.material}</span>
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <span>Pedras:</span>
-                    <span className="font-medium">Zircônia</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Acabamento:</span>
-                    <span className="font-medium">Polido</span>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -450,16 +458,24 @@ export default function ProductDetail() {
                 </h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span>Qualidade:</span>
-                    <span className="font-medium">Certificado de qualidade</span>
+                    <span>Ouro:</span>
+                    <span className="font-medium">10 milésimos de ouro</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Garantia:</span>
                     <span className="font-medium">2 anos</span>
                   </div>
                   <div className="flex justify-between">
+                    <span>Qualidade:</span>
+                    <span className="font-medium">Certificado Hub Joias</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span>Manutenção:</span>
                     <span className="font-medium">Limpeza gratuita</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Resistência:</span>
+                    <span className="font-medium">Antialérgica</span>
                   </div>
                 </div>
               </CardContent>
