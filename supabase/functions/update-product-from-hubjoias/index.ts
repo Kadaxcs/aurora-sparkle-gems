@@ -97,10 +97,10 @@ serve(async (req) => {
           });
           if (searchRes.ok) {
             const searchHtml = await searchRes.text();
-            const firstLink = extractFirstProductLinkFromSearch(searchHtml);
-            if (firstLink) {
-              console.log(`Search found product link: ${firstLink}`);
-              const prodRes = await fetch(firstLink, {
+            const bestLink = await pickBestSearchResult(searchHtml, productName, sku, imageUrl);
+            if (bestLink) {
+              console.log(`Search best match: ${bestLink}`);
+              const prodRes = await fetch(bestLink, {
                 headers: {
                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -111,8 +111,8 @@ serve(async (req) => {
               });
               if (prodRes.ok) {
                 html = await prodRes.text();
-                finalUrl = firstLink;
-                console.log('Fetched product page via search fallback');
+                finalUrl = bestLink;
+                console.log('Fetched product page via search best-match');
                 break;
               }
             }
@@ -257,23 +257,86 @@ function extractProductUrlFromImage(imageUrl: string): string | null {
 }
 
 function extractFirstProductLinkFromSearch(html: string): string | null {
+  const cards = extractProductCardsFromSearch(html);
+  return cards[0]?.url || null;
+}
+
+function extractProductCardsFromSearch(html: string): { url: string; title: string }[] {
+  const results: { url: string; title: string }[] = [];
   try {
-    // Look for first product link in search results
-    const linkPattern = /href="(https?:\/\/www\.hubjoias\.com\.br\/(?:produto|produtos)\/[^"]+\/)"/i;
-    const match = html.match(linkPattern);
-    if (match && match[1]) {
-      return match[1];
+    const itemRegexes = [
+      /<li[^>]*class="[^"]*product[^"]*"[\s\S]*?<a[^>]*href="([^"]+)"[^>]*>[\s\S]*?<h2[^>]*class="[^"]*woocommerce-loop-product__title[^"]*"[^>]*>([^<]+)<\/h2>/gi,
+      /<a[^>]*href="([^"]*\/produto\/[^"]+)"[^>]*>[\s\S]*?<h[12-4][^>]*>([^<]+)<\/h[12-4]>/gi,
+      /<article[^>]*class="[^"]*product[^"]*"[\s\S]*?href="([^"]+)"[\s\S]*?title="([^"]+)"/gi
+    ];
+    for (const rx of itemRegexes) {
+      let m;
+      while ((m = rx.exec(html)) !== null) {
+        const url = m[1].startsWith('http') ? m[1] : `https://www.hubjoias.com.br${m[1]}`;
+        const title = (m[2] || '').trim();
+        if (url.includes('/produto/')) results.push({ url, title });
+      }
+      if (results.length) break;
     }
-    // Alternative: relative URLs
-    const relPattern = /href="(\/(?:produto|produtos)\/[^"]+\/)"/i;
-    const relMatch = html.match(relPattern);
-    if (relMatch && relMatch[1]) {
-      return `https://www.hubjoias.com.br${relMatch[1]}`;
+  } catch {}
+  return results;
+}
+
+function normalizeText(t: string): string {
+  return t
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function jaccard(a: string, b: string): number {
+  const A = new Set(normalizeText(a).split(' '));
+  const B = new Set(normalizeText(b).split(' '));
+  const inter = new Set([...A].filter(x => B.has(x))).size;
+  const uni = new Set([...A, ...B]).size || 1;
+  return inter / uni;
+}
+
+function getImageCode(imageUrl?: string): string | null {
+  if (!imageUrl) return null;
+  const m = imageUrl.match(/\/([A-Z]+\d+_HJ)/i);
+  return m ? m[1] : null;
+}
+
+async function pickBestSearchResult(html: string, productName?: string, sku?: string, imageUrl?: string): Promise<string | null> {
+  const cards = extractProductCardsFromSearch(html);
+  if (cards.length === 0) return null;
+
+  const code = getImageCode(imageUrl) || sku || '';
+
+  // Score by name similarity
+  let best = cards[0];
+  let bestScore = -1;
+  for (const c of cards) {
+    const score = productName ? jaccard(c.title, productName) : 0;
+    if (score > bestScore) {
+      best = c; bestScore = score;
     }
-    return null;
-  } catch {
-    return null;
   }
+
+  // Try to verify candidates by checking SKU/image code inside product page
+  const candidates = [best, ...cards.filter(c => c !== best)].slice(0, 5);
+  for (const c of candidates) {
+    try {
+      const res = await fetch(c.url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(12000) });
+      if (!res.ok) continue;
+      const page = await res.text();
+      if (code && page.toLowerCase().includes(code.toLowerCase())) {
+        return c.url;
+      }
+      // If no code to verify but title is very similar, accept
+      if (bestScore >= 0.35) return c.url;
+    } catch {}
+  }
+  return best.url;
 }
 
 function extractPriceFromJsonLd(html: string): number | null {
