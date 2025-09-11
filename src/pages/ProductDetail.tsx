@@ -42,6 +42,7 @@ interface Product {
   is_active: boolean;
   is_featured: boolean;
   dimensions?: any;
+  available_sizes?: any;
 }
 
 export default function ProductDetail() {
@@ -283,21 +284,23 @@ export default function ProductDetail() {
             </div>
 
             {/* Tamanho */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium">Tamanho:</label>
-              <Select value={selectedSize} onValueChange={setSelectedSize}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Escolha um tamanho" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[12, 14, 16, 18, 20, 22].map((size) => (
-                    <SelectItem key={size} value={size.toString()}>
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Tamanho:</label>
+                <Select value={selectedSize} onValueChange={setSelectedSize}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Escolha um tamanho" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {product.available_sizes.map((size: any) => (
+                      <SelectItem key={size} value={size.toString()}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Quantidade */}
             <div className="space-y-3">
@@ -338,13 +341,19 @@ export default function ProductDetail() {
             <div className="space-y-3">
               <Button
                 onClick={addToCart}
-                disabled={addingToCart || product.stock_quantity === 0}
+                disabled={
+                  addingToCart || 
+                  product.stock_quantity === 0 || 
+                  (product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize)
+                }
                 className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
               >
                 {addingToCart ? (
                   "Adicionando..."
                 ) : product.stock_quantity === 0 ? (
                   "Fora de Estoque"
+                ) : (product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize) ? (
+                  "Selecione um Tamanho"
                 ) : (
                   <>
                     <ShoppingCart className="h-5 w-5 mr-2" />

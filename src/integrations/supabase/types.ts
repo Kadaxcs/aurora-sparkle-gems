@@ -381,6 +381,7 @@ export type Database = {
       }
       products: {
         Row: {
+          available_sizes: Json | null
           category_id: string | null
           created_at: string
           description: string | null
@@ -400,6 +401,7 @@ export type Database = {
           weight: number | null
         }
         Insert: {
+          available_sizes?: Json | null
           category_id?: string | null
           created_at?: string
           description?: string | null
@@ -419,6 +421,7 @@ export type Database = {
           weight?: number | null
         }
         Update: {
+          available_sizes?: Json | null
           category_id?: string | null
           created_at?: string
           description?: string | null

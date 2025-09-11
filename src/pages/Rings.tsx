@@ -19,6 +19,7 @@ interface Product {
   short_description?: string;
   is_featured: boolean;
   category_id?: string;
+  available_sizes?: any;
 }
 
 export default function Rings() {

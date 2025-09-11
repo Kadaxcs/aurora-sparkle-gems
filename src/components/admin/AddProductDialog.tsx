@@ -64,6 +64,7 @@ export function AddProductDialog({
     is_active: true,
     is_featured: false,
     dimensions: { length: "", width: "", height: "" },
+    available_sizes: [] as (string | number)[],
   });
   const [media, setMedia] = useState<MediaItem[]>([]);
   const { toast } = useToast();
@@ -97,6 +98,7 @@ export function AddProductDialog({
         is_featured: formData.is_featured,
         images: media.map(item => item.url),
         dimensions: formData.dimensions.length ? formData.dimensions : null,
+        available_sizes: formData.available_sizes,
       };
 
       const { error } = await supabase
@@ -125,6 +127,7 @@ export function AddProductDialog({
         is_active: true,
         is_featured: false,
         dimensions: { length: "", width: "", height: "" },
+        available_sizes: [],
       });
       setMedia([]);
 
@@ -304,6 +307,75 @@ export function AddProductDialog({
                   dimensions: { ...formData.dimensions, height: e.target.value }
                 })}
               />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tamanhos Disponíveis</Label>
+            <div className="space-y-2">
+              <div className="flex gap-2 flex-wrap">
+                {formData.available_sizes.map((size, index) => (
+                  <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded">
+                    <span className="text-sm">{size}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0"
+                      onClick={() => {
+                        const newSizes = formData.available_sizes.filter((_, i) => i !== index);
+                        setFormData({ ...formData, available_sizes: newSizes });
+                      }}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  id="new-size"
+                  placeholder="Adicionar tamanho (ex: 16, P, M, G)"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const input = e.target as HTMLInputElement;
+                      const value = input.value.trim();
+                      if (value && !formData.available_sizes.includes(value)) {
+                        const numValue = Number(value);
+                        const newSize = isNaN(numValue) ? value : numValue;
+                        setFormData({ 
+                          ...formData, 
+                          available_sizes: [...formData.available_sizes, newSize]
+                        });
+                        input.value = '';
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const input = document.getElementById('new-size') as HTMLInputElement;
+                    const value = input.value.trim();
+                    if (value && !formData.available_sizes.includes(value)) {
+                      const numValue = Number(value);
+                      const newSize = isNaN(numValue) ? value : numValue;
+                      setFormData({ 
+                        ...formData, 
+                        available_sizes: [...formData.available_sizes, newSize]
+                      });
+                      input.value = '';
+                    }
+                  }}
+                >
+                  Adicionar
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Para anéis: use números (14, 16, 18, 20, 22). Para roupas: use letras (P, M, G, XG).
+              </p>
             </div>
           </div>
 
