@@ -161,7 +161,7 @@ export default function OrderConfirmation() {
           </div>
           <h1 className="text-3xl font-bold text-primary mb-2">Pedido Confirmado!</h1>
           <p className="text-muted-foreground">
-            Obrigado pela sua compra. Você receberá um e-mail com os detalhes do pedido.
+            Obrigado pela sua compra! Você receberá automaticamente emails de confirmação e atualizações sobre o status do seu pedido em <strong>pedidos@bellaaurora.com.br</strong>
           </p>
         </div>
 
@@ -328,7 +328,7 @@ export default function OrderConfirmation() {
                   <Mail className="h-5 w-5 text-primary" />
                   <div>
                     <p className="font-medium">E-mail</p>
-                    <p className="text-sm text-muted-foreground">contato@bellaaurorajoias.com</p>
+                    <p className="text-sm text-muted-foreground">contato@bellaaurora.com.br</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

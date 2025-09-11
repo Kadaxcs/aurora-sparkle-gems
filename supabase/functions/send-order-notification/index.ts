@@ -176,7 +176,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email notification
     const emailResponse = await resend.emails.send({
-      from: "Bella Aurora <orders@bellaaurora.com.br>",
+      from: "Bella Aurora <pedidos@bellaaurora.com.br>",
       to: [adminEmail],
       subject: `🔔 Novo Pedido Pago - ${order.order_number} - R$ ${order.total.toFixed(2)}`,
       html: emailHtml,
