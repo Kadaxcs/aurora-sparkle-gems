@@ -22,11 +22,11 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, productId } = await req.json();
+    const { imageUrl, productId, sku, productName } = await req.json();
     
-    if (!imageUrl || !productId) {
+    if (!productId) {
       return new Response(
-        JSON.stringify({ error: 'Image URL and Product ID are required' }),
+        JSON.stringify({ error: 'Product ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

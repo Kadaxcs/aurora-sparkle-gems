@@ -20,6 +20,7 @@ interface Product {
   is_active: boolean;
   images: any;
   description?: string;
+  sku?: string;
 }
 
 interface ProductUpdateData {
@@ -57,7 +58,7 @@ export function ProductUpdatePanel() {
       setLoading(true);
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, weight, stock_quantity, is_active, images, description')
+        .select('id, name, price, weight, stock_quantity, is_active, images, description, sku')
         .eq('is_active', false)
         .eq('price', 39)
         .order('name');
@@ -95,9 +96,9 @@ export function ProductUpdatePanel() {
       console.log(`Updating product ${product.name} with image: ${imageUrl}`);
       
       // Call our edge function to scrape product data
-      const { data, error } = await supabase.functions.invoke('update-product-from-hubjoias', {
-        body: { imageUrl, productId: product.id }
-      });
+        const { data, error } = await supabase.functions.invoke('update-product-from-hubjoias', {
+          body: { imageUrl, productId: product.id, sku: product.sku, productName: product.name }
+        });
 
       if (error) {
         console.error(`Supabase function error for ${product.id}:`, error);
