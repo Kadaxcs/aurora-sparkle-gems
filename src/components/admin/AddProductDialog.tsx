@@ -97,7 +97,11 @@ export function AddProductDialog({
         is_active: formData.is_active,
         is_featured: formData.is_featured,
         images: media.map(item => item.url),
-        dimensions: formData.dimensions.length ? formData.dimensions : null,
+        dimensions: (formData.dimensions.length || formData.dimensions.width || formData.dimensions.height) ? {
+          length: formData.dimensions.length ? parseFloat(formData.dimensions.length) : null,
+          width: formData.dimensions.width ? parseFloat(formData.dimensions.width) : null,
+          height: formData.dimensions.height ? parseFloat(formData.dimensions.height) : null,
+        } : null,
         available_sizes: formData.available_sizes,
       };
 
