@@ -21,9 +21,20 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Safeguard variables for logging in catch
+  let productId: string | undefined;
+  let sku: string | undefined;
+  let productName: string | undefined;
+  let imageUrl: string | undefined;
+
   try {
-    const { imageUrl, productId, sku, productName } = await req.json();
-    
+    let body: any = {};
+    try { body = await req.json(); } catch (_e) { body = {}; }
+    imageUrl = body.imageUrl;
+    productId = body.productId;
+    sku = body.sku;
+    productName = body.productName;
+
     if (!productId) {
       return new Response(
         JSON.stringify({ error: 'Product ID is required' }),
@@ -146,17 +157,17 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error(`Error updating product ${sku || productName}:`, error);
+    console.error(`Error updating product ${sku || productName || 'unknown'}:`, error);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message,
+        error: (error as Error).message || 'Erro desconhecido',
         productId,
         sku: sku || 'N/A'
       }),
       { 
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
@@ -572,9 +583,9 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
       console.log(`Using estimated cost price for ${name}: R$ ${costPrice}`);
     }
 
-    // Aceitar apenas preço de alta confiança (JSON-LD ou META)
-    if (priceSource !== 'jsonld' && priceSource !== 'meta') {
-      throw new Error('Preço não encontrado com alta confiança (JSON-LD/META).');
+    // Aceitar preço de alta confiança: JSON-LD, META ou HTML do bloco principal
+    if (priceSource !== 'jsonld' && priceSource !== 'meta' && priceSource !== 'regex') {
+      throw new Error('Preço não encontrado com alta confiança (JSON-LD/META/HTML).');
     }
 
     // Calculate sale price with appropriate margin (150-200%)
