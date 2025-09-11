@@ -276,6 +276,25 @@ function extractFirstProductLinkFromSearch(html: string): string | null {
   }
 }
 
+function getMainProductPriceHtml(html: string): string | null {
+  try {
+    const markers = [
+      /summary\s+entry-summary/i,
+      /id="product-\d+"/i,
+      /class="product\s+type-product[^"]*"/i
+    ];
+    for (const m of markers) {
+      const idx = html.search(m);
+      if (idx !== -1) {
+        return html.slice(idx, Math.min(idx + 15000, idx + Math.floor(html.length * 0.5)));
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function extractProductData(html: string, sourceUrl: string, sku?: string, productName?: string): ProductUpdate | null {
   try {
     console.log(`Extracting product data for SKU: ${sku}, Name: ${productName}`);
@@ -335,10 +354,12 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
     ];
     
     console.log('Searching for price in HTML...');
+    const searchHtml = getMainProductPriceHtml(html) || html;
+    console.log('Using main product section:', searchHtml !== html);
     
     for (let i = 0; i < pricePatterns.length; i++) {
       const pattern = pricePatterns[i];
-      const match = html.match(pattern);
+      const match = searchHtml.match(pattern);
       if (match && match[1]) {
         const cleanPrice = match[1].replace(/[^\d,]/g, '').replace(',', '.');
         const price = parseFloat(cleanPrice);
@@ -365,7 +386,7 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
       ];
       
       for (const pattern of fallbackPricePatterns) {
-        const priceMatches = [...html.matchAll(pattern)];
+        const priceMatches = [...searchHtml.matchAll(pattern)];
         if (priceMatches && priceMatches.length > 0) {
           // Use the first reasonable price found
           for (const match of priceMatches) {
