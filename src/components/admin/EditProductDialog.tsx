@@ -45,6 +45,7 @@ interface Product {
   sale_price?: number;
   stock_quantity: number;
   weight?: number;
+  material?: string;
   category_id?: string;
   is_active: boolean;
   is_featured: boolean;
@@ -78,6 +79,7 @@ export function EditProductDialog({
     sale_price: "",
     stock_quantity: "",
     weight: "",
+    material: "",
     category_id: "",
     is_active: true,
     is_featured: false,
@@ -98,6 +100,7 @@ export function EditProductDialog({
         sale_price: product.sale_price?.toString() || "",
         stock_quantity: product.stock_quantity?.toString() || "",
         weight: product.weight?.toString() || "",
+        material: product.material || "",
         category_id: product.category_id || "",
         is_active: product.is_active,
         is_featured: product.is_featured,
@@ -141,6 +144,7 @@ export function EditProductDialog({
         sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
         stock_quantity: parseInt(formData.stock_quantity) || 0,
         weight: formData.weight ? parseFloat(formData.weight) : null,
+        material: formData.material || null,
         category_id: formData.category_id || null,
         is_active: formData.is_active,
         is_featured: formData.is_featured,
@@ -263,7 +267,7 @@ export function EditProductDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="weight">Peso (gramas)</Label>
               <Input
@@ -272,6 +276,16 @@ export function EditProductDialog({
                 step="0.01"
                 value={formData.weight}
                 onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="material">Material</Label>
+              <Input
+                id="material"
+                value={formData.material}
+                onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                placeholder="Ex: Ouro 18k, Prata 925"
               />
             </div>
 

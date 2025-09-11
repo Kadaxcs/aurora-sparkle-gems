@@ -38,6 +38,7 @@ interface Product {
   sku?: string;
   stock_quantity: number;
   weight?: number;
+  material?: string;
   images: any; // Json type from Supabase
   is_active: boolean;
   is_featured: boolean;
@@ -242,16 +243,11 @@ export default function ProductDetail() {
 
           {/* Informações do Produto */}
           <div className="space-y-6">
-            {/* Título e SKU */}
+            {/* Título */}
             <div>
               <h1 className="text-3xl font-serif font-bold text-foreground mb-2">
                 {product.name}
               </h1>
-              {product.sku && (
-                <p className="text-muted-foreground text-sm">
-                  SKU: {product.sku}
-                </p>
-              )}
             </div>
 
             {/* Preço */}
@@ -428,10 +424,12 @@ export default function ProductDetail() {
                       <span className="font-medium">{product.weight}g</span>
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <span>Material:</span>
-                    <span className="font-medium">Ouro 18k</span>
-                  </div>
+                  {product.material && (
+                    <div className="flex justify-between">
+                      <span>Material:</span>
+                      <span className="font-medium">{product.material}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>Pedras:</span>
                     <span className="font-medium">Zircônia</span>

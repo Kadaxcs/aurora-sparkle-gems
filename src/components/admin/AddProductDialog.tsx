@@ -60,6 +60,7 @@ export function AddProductDialog({
     cost_price: "",
     stock_quantity: "",
     weight: "",
+    material: "",
     category_id: "",
     is_active: true,
     is_featured: false,
@@ -93,6 +94,7 @@ export function AddProductDialog({
         sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
         stock_quantity: parseInt(formData.stock_quantity) || 0,
         weight: formData.weight ? parseFloat(formData.weight) : null,
+        material: formData.material || null,
         category_id: formData.category_id || null,
         is_active: formData.is_active,
         is_featured: formData.is_featured,
@@ -127,6 +129,7 @@ export function AddProductDialog({
         cost_price: "",
         stock_quantity: "",
         weight: "",
+        material: "",
         category_id: "",
         is_active: true,
         is_featured: false,
@@ -246,7 +249,7 @@ export function AddProductDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="weight">Peso (gramas)</Label>
               <Input
@@ -255,6 +258,16 @@ export function AddProductDialog({
                 step="0.01"
                 value={formData.weight}
                 onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="material">Material</Label>
+              <Input
+                id="material"
+                value={formData.material}
+                onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                placeholder="Ex: Ouro 18k, Prata 925"
               />
             </div>
 
