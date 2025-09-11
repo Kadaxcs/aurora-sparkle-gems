@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Truck, Clock, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FreightResult {
   price: number;
@@ -56,67 +57,40 @@ export const FreightCalculator: React.FC<FreightCalculatorProps> = ({
     setIsCalculating(true);
 
     try {
-      // Configurações fixas
-      const originCep = "13480678"; // Limeira-SP
-      const weight = 0.1; // 100g
-      const height = 6;
-      const width = 12;
-      const length = 18;
-
-      // Simulação da API dos Correios - em produção usar API real
-      const mockCalculation = () => {
-        // Simular diferentes preços baseado na distância (primeiros dígitos do CEP)
-        const destRegion = parseInt(cleanCep.substring(0, 2));
-        const originRegion = 13; // SP
-        
-        let basePrice = 15.50;
-        let baseDays = 5;
-
-        // Calcular baseado na região
-        const distance = Math.abs(destRegion - originRegion);
-        
-        if (distance === 0) {
-          basePrice = 12.50; // Mesmo estado
-          baseDays = 3;
-        } else if (distance <= 2) {
-          basePrice = 15.50; // Estados próximos
-          baseDays = 5;
-        } else if (distance <= 5) {
-          basePrice = 22.80; // Região sudeste/sul
-          baseDays = 7;
-        } else {
-          basePrice = 28.90; // Outras regiões
-          baseDays = 10;
+      // Chamar edge function para calcular frete real
+      const { data, error } = await supabase.functions.invoke('calculate-shipping', {
+        body: {
+          destCep: cleanCep,
+          originCep: "13480678", // Limeira-SP
+          weight: 0.1, // 100g
+          height: 6,
+          width: 12,
+          length: 18
         }
-
-        // Adicionar 48h conforme solicitado
-        baseDays += 2;
-
-        return {
-          price: basePrice,
-          days: baseDays
-        };
-      };
-
-      // Simular delay da API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const result = mockCalculation();
-      
-      const freightData: FreightResult = {
-        price: result.price,
-        days: result.days
-      };
-
-      setFreightResult(freightData);
-      onFreightCalculated(freightData);
-
-      toast({
-        title: "Frete calculado",
-        description: `R$ ${result.price.toFixed(2)} - ${result.days} dias úteis`,
       });
 
+      if (error) throw error;
+
+      if (data?.success) {
+        const freightData: FreightResult = {
+          price: data.data.price,
+          days: data.data.days
+        };
+
+        setFreightResult(freightData);
+        onFreightCalculated(freightData);
+
+        toast({
+          title: "Frete calculado",
+          description: `R$ ${data.data.price.toFixed(2)} - ${data.data.days} dias úteis`,
+        });
+      } else {
+        throw new Error(data?.error || 'Erro ao calcular frete');
+      }
+
     } catch (error) {
+      console.error('Erro ao calcular frete:', error);
+      
       const errorResult: FreightResult = {
         price: 0,
         days: 0,
