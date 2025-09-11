@@ -460,6 +460,7 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
 
     // Extract price (cost price from HubJoias) - improved patterns
     let costPrice = 0;
+    let priceSource: 'jsonld' | 'meta' | 'regex' | 'estimated' = 'estimated';
     const pricePatterns = [
       // WooCommerce price patterns
       /<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[^R]*R\$[^>]*>&nbsp;([0-9,]+(?:\.[0-9]{2})?)<\/bdi>/i,
@@ -483,6 +484,7 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
     let jsonLdPrice = extractPriceFromJsonLd(searchHtml) ?? extractPriceFromJsonLd(html);
     if (jsonLdPrice && jsonLdPrice > 0) {
       costPrice = jsonLdPrice;
+      priceSource = 'jsonld';
       console.log(`Price from JSON-LD: R$ ${costPrice}`);
     }
 
@@ -491,6 +493,7 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
       const metaPrice = extractPriceFromMetaTags(searchHtml) ?? extractPriceFromMetaTags(html);
       if (metaPrice && metaPrice > 0) {
         costPrice = metaPrice;
+        priceSource = 'meta';
         console.log(`Price from META: R$ ${costPrice}`);
       }
     }
@@ -505,6 +508,7 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
           const price = parseFloat(cleanPrice);
           if (!isNaN(price) && price > 0) {
             costPrice = price;
+            priceSource = 'regex';
             console.log(`Found cost price with pattern ${i + 1}: R$ ${costPrice}`);
             break;
           }
@@ -564,7 +568,13 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
       } else {
         costPrice = 39.00; // Default jewelry wholesale price
       }
+      priceSource = 'estimated';
       console.log(`Using estimated cost price for ${name}: R$ ${costPrice}`);
+    }
+
+    // Aceitar apenas preço de alta confiança (JSON-LD ou META)
+    if (priceSource !== 'jsonld' && priceSource !== 'meta') {
+      throw new Error('Preço não encontrado com alta confiança (JSON-LD/META).');
     }
 
     // Calculate sale price with appropriate margin (150-200%)
