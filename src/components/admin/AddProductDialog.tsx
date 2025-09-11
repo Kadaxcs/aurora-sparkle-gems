@@ -60,7 +60,7 @@ export function AddProductDialog({
     cost_price: "",
     stock_quantity: "",
     weight: "",
-    material: "",
+    material: "Todas as Semijoias da BellaAurora possuem 10 milésimos de ouro",
     category_id: "",
     is_active: true,
     is_featured: false,
@@ -129,7 +129,7 @@ export function AddProductDialog({
         cost_price: "",
         stock_quantity: "",
         weight: "",
-        material: "",
+        material: "Todas as Semijoias da BellaAurora possuem 10 milésimos de ouro",
         category_id: "",
         is_active: true,
         is_featured: false,
@@ -330,6 +330,50 @@ export function AddProductDialog({
           <div className="space-y-2">
             <Label>Tamanhos Disponíveis</Label>
             <div className="space-y-2">
+              <div className="flex gap-2 mb-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const ringSizes = [12, 14, 16, 18, 20, 22];
+                    setFormData({ 
+                      ...formData, 
+                      available_sizes: ringSizes
+                    });
+                  }}
+                >
+                  Tamanhos Padrão de Anéis
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const clothingSizes = ["P", "M", "G", "GG"];
+                    setFormData({ 
+                      ...formData, 
+                      available_sizes: clothingSizes
+                    });
+                  }}
+                >
+                  Tamanhos Padrão de Roupa
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFormData({ 
+                      ...formData, 
+                      available_sizes: []
+                    });
+                  }}
+                >
+                  Limpar
+                </Button>
+              </div>
+              
               <div className="flex gap-2 flex-wrap">
                 {formData.available_sizes.map((size, index) => (
                   <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded">
@@ -391,7 +435,7 @@ export function AddProductDialog({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Para anéis: use números (14, 16, 18, 20, 22). Para roupas: use letras (P, M, G, XG).
+                Para anéis: use números (12, 14, 16, 18, 20, 22). Para roupas: use letras (P, M, G, GG).
               </p>
             </div>
           </div>
