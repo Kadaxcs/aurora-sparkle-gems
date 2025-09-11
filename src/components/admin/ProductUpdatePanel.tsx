@@ -92,21 +92,30 @@ export function ProductUpdatePanel() {
       }
 
       const imageUrl = product.images[0];
+      console.log(`Updating product ${product.name} with image: ${imageUrl}`);
       
       // Call our edge function to scrape product data
       const { data, error } = await supabase.functions.invoke('update-product-from-hubjoias', {
         body: { imageUrl, productId: product.id }
       });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      if (error) {
+        console.error(`Supabase function error for ${product.id}:`, error);
+        throw new Error(`Erro na função: ${error.message || 'Erro desconhecido'}`);
+      }
+      
+      if (!data.success) {
+        console.error(`Function returned error for ${product.id}:`, data.error);
+        throw new Error(data.error || 'Erro ao processar produto');
+      }
 
       const updateData = data.data as ProductUpdateData;
+      console.log(`Successfully updated ${product.name}:`, updateData);
       
       // Update the product in our state first
       setProducts(prev => prev.map(p => 
         p.id === product.id 
-          ? { ...p, updateData, isUpdating: false, hasError: false }
+          ? { ...p, updateData, isUpdating: false, hasError: false, errorMessage: undefined }
           : p
       ));
 
@@ -114,13 +123,15 @@ export function ProductUpdatePanel() {
     } catch (error) {
       console.error(`Error updating product ${product.id}:`, error);
       
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      
       setProducts(prev => prev.map(p => 
         p.id === product.id 
           ? { 
               ...p, 
               isUpdating: false, 
               hasError: true, 
-              errorMessage: error instanceof Error ? error.message : 'Erro desconhecido'
+              errorMessage
             }
           : p
       ));
@@ -343,6 +354,21 @@ export function ProductUpdatePanel() {
               <Check className="h-4 w-4 mr-2" />
               Ativar Produtos ({products.filter(p => p.updateData && p.selected).length})
             </Button>
+
+            <Button
+              onClick={() => {
+                // Test with first product
+                const firstProduct = products.find(p => !p.updateData && !p.hasError);
+                if (firstProduct) {
+                  updateSingleProduct(firstProduct);
+                }
+              }}
+              disabled={updating}
+              variant="secondary"
+              size="sm"
+            >
+              Teste 1 Produto
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -441,13 +467,21 @@ export function ProductUpdatePanel() {
                   </TableCell>
                   <TableCell>
                     {product.hasError && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateSingleProduct(product)}
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateSingleProduct(product)}
+                          disabled={product.isUpdating}
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
+                        {product.errorMessage && (
+                          <div className="text-xs text-red-600 max-w-40 truncate" title={product.errorMessage}>
+                            {product.errorMessage}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>

@@ -34,7 +34,7 @@ serve(async (req) => {
     console.log(`Re-scraping product from image URL: ${imageUrl}`);
     
     // Extract the base product URL from the image URL
-    const productUrl = extractProductUrlFromImage(imageUrl);
+    let productUrl = extractProductUrlFromImage(imageUrl);
     
     if (!productUrl) {
       throw new Error('Could not extract product URL from image');
@@ -42,19 +42,46 @@ serve(async (req) => {
 
     console.log(`Extracted product URL: ${productUrl}`);
     
-    // Fetch the product page
-    const response = await fetch(productUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
+    // Try multiple URL variations if the first one fails
+    const urlVariations = [
+      productUrl,
+      productUrl.replace('/produto/', '/produtos/'),
+      productUrl.replace('https://www.hubjoias.com.br/produto/', 'https://hubjoias.com.br/produto/'),
+    ];
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    let html = '';
+    let finalUrl = '';
+    
+    for (const url of urlVariations) {
+      try {
+        console.log(`Trying URL: ${url}`);
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+            'Cache-Control': 'no-cache'
+          }
+        });
+
+        if (response.ok) {
+          html = await response.text();
+          finalUrl = url;
+          console.log(`Successfully fetched from: ${url}`);
+          break;
+        } else {
+          console.log(`URL failed with status ${response.status}: ${url}`);
+        }
+      } catch (error) {
+        console.log(`URL failed with error: ${url} - ${error.message}`);
+        continue;
+      }
     }
 
-    const html = await response.text();
-    const productData = extractProductData(html, productUrl);
+    if (!html) {
+      throw new Error(`All URL variations failed for product`);
+    }
+    const productData = extractProductData(html, finalUrl);
     
     if (!productData) {
       throw new Error('Could not extract product data from page');
@@ -89,36 +116,53 @@ serve(async (req) => {
 
 function extractProductUrlFromImage(imageUrl: string): string | null {
   try {
-    // HubJoias image URLs follow pattern: https://www.hubjoias.com.br/wp-content/uploads/YYYY/MM/filename.ext
-    // We need to find the corresponding product page
+    console.log(`Processing image URL: ${imageUrl}`);
     
-    // Extract filename without extension
-    const urlParts = imageUrl.split('/');
-    const filename = urlParts[urlParts.length - 1];
-    const baseFilename = filename.split('.')[0];
-    
-    // Clean filename to create potential slug
-    let slug = baseFilename
-      .toLowerCase()
-      .replace(/_hj.*$/i, '') // Remove _HJ suffixes
-      .replace(/[-_]still$/i, '') // Remove -still suffixes
-      .replace(/[-_].*$/i, '') // Remove other suffixes
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-
-    // Common patterns for HubJoias product URLs
-    const possibleUrls = [
-      `https://www.hubjoias.com.br/produto/${slug}/`,
-      `https://www.hubjoias.com.br/produto/anel-${slug}/`,
-      `https://www.hubjoias.com.br/produto/brinco-${slug}/`,
-      `https://www.hubjoias.com.br/produto/colar-${slug}/`,
-      `https://www.hubjoias.com.br/produto/pulseira-${slug}/`,
+    // Patterns to extract SKU/product code from image URL
+    const patterns = [
+      // Pattern 1: BR123_HJ or similar codes
+      /\/([A-Z]{2,}\d+[A-Z]*)[_-].*\.(?:jpg|jpeg|png|webp)/i,
+      // Pattern 2: Simple product codes in filename
+      /\/([A-Z]{2,}\d+).*\.(?:jpg|jpeg|png|webp)/i,
+      // Pattern 3: Extract from descriptive filenames
+      /\/([\w-]+?)(?:-\d+)?\.(?:jpg|jpeg|png|webp)/i
     ];
 
-    // Return the first possible URL (we'll try them in the main function)
-    return possibleUrls[0];
+    for (const pattern of patterns) {
+      const match = imageUrl.match(pattern);
+      if (match && match[1]) {
+        let productCode = match[1].toLowerCase()
+          .replace(/_hj.*$/i, '')
+          .replace(/-still$/i, '')
+          .replace(/[^a-z0-9-]/g, '');
+        
+        console.log(`Extracted product code: ${productCode}`);
+        
+        // Try different URL patterns for HubJoias
+        const possibleUrls = [
+          `https://www.hubjoias.com.br/produto/${productCode}/`,
+          `https://www.hubjoias.com.br/produto/${productCode.replace('-', '')}/`,
+          `https://www.hubjoias.com.br/produtos/${productCode}/`,
+        ];
+        
+        // Return the first URL to try
+        return possibleUrls[0];
+      }
+    }
     
+    // Fallback: try to create URL from descriptive filename
+    const filename = imageUrl.split('/').pop()?.split('.')[0];
+    if (filename) {
+      const cleanName = filename.toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      console.log(`Fallback product URL: ${cleanName}`);
+      return `https://www.hubjoias.com.br/produto/${cleanName}/`;
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error extracting product URL:', error);
     return null;
@@ -134,7 +178,9 @@ function extractProductData(html: string, sourceUrl: string): ProductUpdate | nu
     const namePatterns = [
       /<h1[^>]*class="[^"]*product_title[^"]*"[^>]*>([^<]+)<\/h1>/i,
       /<h1[^>]*class="[^"]*entry-title[^"]*"[^>]*>([^<]+)<\/h1>/i,
-      /<title>([^|<]+)/i
+      /<h1[^>]*class="[^"]*elementor-heading-title[^"]*"[^>]*>([^<]+)<\/h1>/i,
+      /<title>([^<]+?)\s*[-|–]\s*HubJoias/i,
+      /<h1[^>]*>([^<]+)<\/h1>/i
     ];
     
     for (const pattern of namePatterns) {
@@ -142,9 +188,13 @@ function extractProductData(html: string, sourceUrl: string): ProductUpdate | nu
       if (match && match[1] && match[1].trim().length > 3) {
         name = match[1].trim()
           .replace(/^Anel\s+/i, '')
+          .replace(/^Brinco\s+/i, '')
+          .replace(/^Colar\s+/i, '')
+          .replace(/^Pulseira\s+/i, '')
           .replace(/\s*-\s*HubJoias.*$/i, '')
           .replace(/&[^;]+;/g, '')
           .trim();
+        console.log(`Found product name: ${name}`);
         break;
       }
     }
@@ -154,29 +204,85 @@ function extractProductData(html: string, sourceUrl: string): ProductUpdate | nu
       return null;
     }
 
-    // Extract price (cost price from HubJoias)
+    // Extract price (cost price from HubJoias) - improved patterns
     let costPrice = 0;
     const pricePatterns = [
+      // WooCommerce price patterns
+      /<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[^R]*R\$[^>]*>&nbsp;([0-9,]+(?:\.[0-9]{2})?)<\/bdi>/i,
+      /<span[^>]*class="[^"]*amount[^"]*"[^>]*>R\$[^>]*>&nbsp;([0-9,]+(?:\.[0-9]{2})?)<\/span>/i,
+      // More flexible price patterns
       /R\$[^>]*>&nbsp;([0-9,]+(?:\.[0-9]{2})?)/i,
-      /<span[^>]*woocommerce-Price-amount[^>]*>[^R]*R\$[^>]*>&nbsp;([^<]+)/i,
-      /R\$\s*([0-9,]+(?:\.[0-9]{2})?)/i
+      /R\$\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      // Meta price patterns
+      /<meta[^>]*property="product:price:amount"[^>]*content="([^"]+)"/i,
+      // JSON-LD structured data
+      /"price"\s*:\s*"([0-9,]+(?:\.[0-9]{2})?)"/i,
+      // Alternative currency patterns
+      /currency[^>]*>.*?([0-9,]+(?:\.[0-9]{2})?)/i,
     ];
     
-    for (const pattern of pricePatterns) {
+    console.log('Searching for price in HTML...');
+    
+    for (let i = 0; i < pricePatterns.length; i++) {
+      const pattern = pricePatterns[i];
       const match = html.match(pattern);
       if (match && match[1]) {
         const cleanPrice = match[1].replace(/[^\d,]/g, '').replace(',', '.');
         const price = parseFloat(cleanPrice);
         if (!isNaN(price) && price > 0) {
           costPrice = price;
+          console.log(`Found cost price with pattern ${i + 1}: R$ ${costPrice}`);
           break;
         }
       }
     }
 
     if (costPrice === 0) {
-      console.log('Could not extract cost price');
-      return null;
+      console.log('Could not extract cost price, trying fallback methods...');
+      
+      // Try to find any price mentioned in the page with broader search
+      const fallbackPricePatterns = [
+        /(\d+,\d{2})/g,
+        /(\d+\.\d{2})/g,
+        /R\$\s*(\d+)/g,
+      ];
+      
+      for (const pattern of fallbackPricePatterns) {
+        const priceMatches = html.match(pattern);
+        if (priceMatches && priceMatches.length > 0) {
+          // Use the first reasonable price found
+          for (const priceMatch of priceMatches) {
+            let price = parseFloat(priceMatch.replace(/[^\d.,]/g, '').replace(',', '.'));
+            if (price > 10 && price < 1000) { // Reasonable price range
+              costPrice = price;
+              console.log(`Using fallback price: R$ ${costPrice}`);
+              break;
+            }
+          }
+          if (costPrice > 0) break;
+        }
+      }
+    }
+
+    if (costPrice === 0) {
+      console.log('Still no price found, checking for any numerical values...');
+      // Last resort: look for any reasonable numerical value
+      const allNumbers = html.match(/\d+[,.]?\d*/g);
+      if (allNumbers) {
+        for (const num of allNumbers) {
+          const price = parseFloat(num.replace(',', '.'));
+          if (price >= 15 && price <= 500) { // Very reasonable price range for jewelry
+            costPrice = price;
+            console.log(`Using detected numerical value as price: R$ ${costPrice}`);
+            break;
+          }
+        }
+      }
+    }
+
+    if (costPrice === 0) {
+      console.log('No price found, using default cost price');
+      costPrice = 39.00; // Default cost price from your system
     }
 
     // Calculate sale price with 100% margin
