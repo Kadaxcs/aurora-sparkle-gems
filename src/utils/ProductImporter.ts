@@ -23,8 +23,8 @@ export class ProductImporter {
       
       const products: ImportedProduct[] = [];
       
-      // Find product elements (based on the HTML structure we saw)
-      let productElements = Array.from(doc.querySelectorAll('.woocommerce-LoopProduct-link, .product-item, .wc-block-grid__product'));
+      // Find product elements using WooCommerce structure
+      let productElements = Array.from(doc.querySelectorAll('li.product a.woocommerce-LoopProduct-link'));
       
       if (productElements.length === 0) {
         // Try alternative selectors
@@ -51,14 +51,39 @@ export class ProductImporter {
           
           if (!href || !href.includes('/produto/')) return;
           
-          // Extract product name
-          const nameElement = element.querySelector('h2, .woocommerce-loop-product__title, .product-title, .entry-title');
-          const name = nameElement?.textContent?.trim();
+          // For WooCommerce structure, the title is inside the link
+          let nameElement = element.querySelector('h2.woocommerce-loop-product__title') || 
+                           element.querySelector('h2') ||
+                           element.querySelector('.woocommerce-loop-product__title');
           
+          // If not found inside link, look in parent li
+          if (!nameElement && element.closest) {
+            const parentLi = element.closest('li.product');
+            if (parentLi) {
+              nameElement = parentLi.querySelector('h2.woocommerce-loop-product__title') || 
+                           parentLi.querySelector('h2');
+            }
+          }
+          
+          const name = nameElement?.textContent?.trim();
           if (!name) return;
           
-          // Extract price
-          const priceElement = element.querySelector('.price, .woocommerce-Price-amount, .amount, .price-current');
+          // Extract price - look for WooCommerce price structure
+          let priceElement = element.querySelector('.woocommerce-Price-amount bdi') ||
+                            element.querySelector('.price .amount bdi') ||
+                            element.querySelector('.price') ||
+                            element.querySelector('.woocommerce-Price-amount');
+          
+          // If not found inside link, look in parent li
+          if (!priceElement && element.closest) {
+            const parentLi = element.closest('li.product');
+            if (parentLi) {
+              priceElement = parentLi.querySelector('.woocommerce-Price-amount bdi') ||
+                           parentLi.querySelector('.price .amount bdi') ||
+                           parentLi.querySelector('.price');
+            }
+          }
+          
           const priceText = priceElement?.textContent?.trim();
           const price = this.parsePrice(priceText || '');
           
@@ -67,9 +92,26 @@ export class ProductImporter {
           // Extract images
           const images: string[] = [];
           const imgElements = element.querySelectorAll('img');
+          
+          // Also check parent li for images
+          if (element.closest) {
+            const parentLi = element.closest('li.product');
+            if (parentLi) {
+              const parentImages = parentLi.querySelectorAll('img');
+              parentImages.forEach(img => {
+                const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
+                if (src && !src.includes('placeholder') && !src.includes('logo')) {
+                  // Convert relative URLs to absolute
+                  const absoluteUrl = src.startsWith('http') ? src : `${this.HUBJOIAS_BASE_URL}${src}`;
+                  images.push(absoluteUrl);
+                }
+              });
+            }
+          }
+          
           imgElements.forEach(img => {
-            const src = img.src || img.getAttribute('data-src');
-            if (src && !src.includes('placeholder')) {
+            const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
+            if (src && !src.includes('placeholder') && !src.includes('logo')) {
               // Convert relative URLs to absolute
               const absoluteUrl = src.startsWith('http') ? src : `${this.HUBJOIAS_BASE_URL}${src}`;
               images.push(absoluteUrl);
@@ -79,7 +121,7 @@ export class ProductImporter {
           products.push({
             name: name.replace(/^Anel\s+/i, ''), // Remove "Anel" prefix for rings
             price,
-            images,
+            images: [...new Set(images)], // Remove duplicates
             sourceUrl: href.startsWith('http') ? href : `${this.HUBJOIAS_BASE_URL}${href}`
           });
         } catch (error) {
@@ -108,7 +150,7 @@ export class ProductImporter {
         const line = lines[i];
         
         // Look for product links in markdown format
-        const productMatch = line.match(/\[([^[\]]*Anel[^[\]]*)\]\(([^)]+)\)/i);
+        const productMatch = line.match(/\[([^[\]]*)\]\(([^)]+)\)/i);
         if (productMatch) {
           const fullText = productMatch[1];
           const url = productMatch[2];

@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductImporter } from "@/utils/ProductImporter";
 import { Download, Globe, Package, AlertCircle, CheckCircle } from "lucide-react";
 import { ImportExample } from "./ImportExample";
+import { TestImporter } from "./TestImporter";
 
 interface ImportedProduct {
   name: string;
@@ -126,6 +127,8 @@ export const ProductImporterComponent = () => {
       const result = await ProductImporter.extractProductsFromHtml(html);
       setProgress(75);
 
+      console.log('Extract result:', result);
+
       if (result.success && result.data) {
         const productsWithSelection = result.data.map(product => ({
           ...product,
@@ -134,11 +137,14 @@ export const ProductImporterComponent = () => {
         setImportedProducts(productsWithSelection);
         setProgress(100);
 
+        console.log(`Found ${result.data.length} products:`, result.data);
+
         toast({
           title: "Sucesso",
           description: `${result.data.length} produtos encontrados`,
         });
       } else {
+        console.error('Extract failed:', result.error);
         throw new Error(result.error || "Erro ao extrair produtos");
       }
     } catch (error) {
@@ -168,8 +174,11 @@ export const ProductImporterComponent = () => {
     setProgress(50);
 
     try {
+      console.log('Extracting from HTML, length:', htmlContent.length);
       const result = await ProductImporter.extractProductsFromHtml(htmlContent);
       setProgress(75);
+
+      console.log('Extract result:', result);
 
       if (result.success && result.data) {
         const productsWithSelection = result.data.map(product => ({
@@ -179,11 +188,14 @@ export const ProductImporterComponent = () => {
         setImportedProducts(productsWithSelection);
         setProgress(100);
 
+        console.log(`Found ${result.data.length} products:`, result.data);
+
         toast({
           title: "Sucesso",
           description: `${result.data.length} produtos encontrados`,
         });
       } else {
+        console.error('Extract failed:', result.error);
         throw new Error(result.error || "Erro ao extrair produtos");
       }
     } catch (error) {
@@ -319,6 +331,7 @@ export const ProductImporterComponent = () => {
   return (
     <div className="space-y-6">
       <ImportExample />
+      <TestImporter />
       
       <Card>
         <CardHeader>

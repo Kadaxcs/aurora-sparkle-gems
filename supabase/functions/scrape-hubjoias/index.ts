@@ -80,34 +80,32 @@ function extractProductsFromHtml(html: string): Product[] {
   const products: Product[] = [];
   
   try {
-    // Use regex patterns to extract product data since we can't use DOMParser in Deno
-    const productLinkPattern = /href="([^"]*\/produto\/[^"]*)"[^>]*>.*?<h2[^>]*>([^<]+)<\/h2>.*?(?:R\$\s*([\d,]+(?:\.\d{2})?)|<span[^>]*>\s*R\$\s*([\d,]+(?:\.\d{2})?))/gs;
+    // Look for product list items with WooCommerce structure
+    const productPattern = /<li[^>]*class="[^"]*product[^"]*"[^>]*>.*?<a[^>]*href="([^"]*\/produto\/[^"]*)"[^>]*class="[^"]*woocommerce-LoopProduct-link[^"]*"[^>]*>.*?<h2[^>]*class="[^"]*woocommerce-loop-product__title[^"]*">([^<]+)<\/h2>.*?<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>.*?R\$[^>]*>([^<]+)<\/bdi>/gs;
     
     let match;
-    while ((match = productLinkPattern.exec(html)) !== null) {
-      const [, url, name, price1, price2] = match;
-      const priceText = price1 || price2;
+    while ((match = productPattern.exec(html)) !== null) {
+      const [, url, name, priceText] = match;
       
       if (!name || !priceText || !url) continue;
       
-      const price = parseFloat(priceText.replace(',', '.'));
+      // Clean and parse price
+      const cleanPrice = priceText.replace(/[^\d,]/g, '').replace(',', '.');
+      const price = parseFloat(cleanPrice);
       if (isNaN(price) || price <= 0) continue;
       
       // Extract images from the product section
       const images: string[] = [];
-      const imageStart = html.indexOf(url) - 500; // Look around the product link
-      const imageEnd = html.indexOf(url) + 500;
-      const productSection = html.slice(Math.max(0, imageStart), imageEnd);
+      const productStart = html.indexOf(url) - 1000;
+      const productEnd = html.indexOf(url) + 1000;
+      const productSection = html.slice(Math.max(0, productStart), productEnd);
       
-      const imagePattern = /src="([^"]*\.(?:jpg|jpeg|png|webp)[^"]*)"/gi;
+      const imagePattern = /<img[^>]*src="([^"]*\.(?:jpg|jpeg|png|webp)[^"]*)"/gi;
       let imageMatch;
       while ((imageMatch = imagePattern.exec(productSection)) !== null) {
         const imageSrc = imageMatch[1];
-        if (!imageSrc.includes('placeholder') && !imageSrc.includes('logo')) {
-          const absoluteUrl = imageSrc.startsWith('http') 
-            ? imageSrc 
-            : `https://www.hubjoias.com.br${imageSrc}`;
-          images.push(absoluteUrl);
+        if (!imageSrc.includes('placeholder') && !imageSrc.includes('logo') && imageSrc.includes('hubjoias')) {
+          images.push(imageSrc);
         }
       }
       
@@ -119,16 +117,17 @@ function extractProductsFromHtml(html: string): Product[] {
       });
     }
     
-    // Alternative pattern for different HTML structures
+    // If no products found with first pattern, try simpler pattern
     if (products.length === 0) {
-      const altPattern = /<a[^>]*href="([^"]*\/produto\/[^"]*)"[^>]*>.*?alt="([^"]*)".*?R\$\s*([\d,]+(?:\.\d{2})?)/gs;
+      const simplePattern = /<a[^>]*href="([^"]*\/produto\/[^"]*)"[^>]*>.*?alt="([^"]*)".*?R\$[^>]*>([^<]+)<\/bdi>/gs;
       
-      while ((match = altPattern.exec(html)) !== null) {
+      while ((match = simplePattern.exec(html)) !== null) {
         const [, url, name, priceText] = match;
         
         if (!name || !priceText || !url) continue;
         
-        const price = parseFloat(priceText.replace(',', '.'));
+        const cleanPrice = priceText.replace(/[^\d,]/g, '').replace(',', '.');
+        const price = parseFloat(cleanPrice);
         if (isNaN(price) || price <= 0) continue;
         
         products.push({
@@ -139,6 +138,8 @@ function extractProductsFromHtml(html: string): Product[] {
         });
       }
     }
+    
+    console.log(`Found ${products.length} products with names: ${products.map(p => p.name).join(', ')}`);
     
   } catch (error) {
     console.error('Error parsing HTML:', error);
