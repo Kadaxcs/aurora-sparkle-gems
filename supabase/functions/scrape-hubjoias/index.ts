@@ -80,66 +80,73 @@ function extractProductsFromHtml(html: string): Product[] {
   const products: Product[] = [];
   
   try {
-    // Look for product list items with WooCommerce structure
-    const productPattern = /<li[^>]*class="[^"]*product[^"]*"[^>]*>.*?<a[^>]*href="([^"]*\/produto\/[^"]*)"[^>]*class="[^"]*woocommerce-LoopProduct-link[^"]*"[^>]*>.*?<h2[^>]*class="[^"]*woocommerce-loop-product__title[^"]*">([^<]+)<\/h2>.*?<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>.*?R\$[^>]*>([^<]+)<\/bdi>/gs;
+    // Limit HTML size to prevent timeout
+    const maxHtmlSize = 500000; // 500KB limit
+    const limitedHtml = html.length > maxHtmlSize ? html.substring(0, maxHtmlSize) : html;
     
-    let match;
-    while ((match = productPattern.exec(html)) !== null) {
-      const [, url, name, priceText] = match;
+    // Updated patterns for HubJoias product structure
+    const patterns = [
+      // Pattern 1: WooCommerce product with title and price
+      /<li[^>]*class="[^"]*product[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?<h2[^>]*class="[^"]*woocommerce-loop-product__title[^"]*"[^>]*>([^<]+)<\/h2>[\s\S]*?<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[^R]*R\$[^>]*>([^<]+)<\/bdi>/g,
       
-      if (!name || !priceText || !url) continue;
+      // Pattern 2: Simple product link with title and price
+      /<div[^>]*class="[^"]*product[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]*\/produto\/[^"]*)"[^>]*>[\s\S]*?<h\d[^>]*>([^<]+)<\/h\d>[\s\S]*?R\$[^>]*>([^<]+)/g,
       
-      // Clean and parse price
-      const cleanPrice = priceText.replace(/[^\d,]/g, '').replace(',', '.');
-      const price = parseFloat(cleanPrice);
-      if (isNaN(price) || price <= 0) continue;
-      
-      // Extract images from the product section
-      const images: string[] = [];
-      const productStart = html.indexOf(url) - 1000;
-      const productEnd = html.indexOf(url) + 1000;
-      const productSection = html.slice(Math.max(0, productStart), productEnd);
-      
-      const imagePattern = /<img[^>]*src="([^"]*\.(?:jpg|jpeg|png|webp)[^"]*)"/gi;
-      let imageMatch;
-      while ((imageMatch = imagePattern.exec(productSection)) !== null) {
-        const imageSrc = imageMatch[1];
-        if (!imageSrc.includes('placeholder') && !imageSrc.includes('logo') && imageSrc.includes('hubjoias')) {
-          images.push(imageSrc);
-        }
-      }
-      
-      products.push({
-        name: name.trim().replace(/^Anel\s+/i, ''), // Remove "Anel" prefix
-        price,
-        images: [...new Set(images)], // Remove duplicates
-        sourceUrl: url.startsWith('http') ? url : `https://www.hubjoias.com.br${url}`
-      });
-    }
+      // Pattern 3: Alternative structure
+      /<article[^>]*class="[^"]*product[^"]*"[^>]*>[\s\S]*?href="([^"]*)"[\s\S]*?title="([^"]*)"[\s\S]*?R\$[^>]*>([^<]+)/g
+    ];
     
-    // If no products found with first pattern, try simpler pattern
-    if (products.length === 0) {
-      const simplePattern = /<a[^>]*href="([^"]*\/produto\/[^"]*)"[^>]*>.*?alt="([^"]*)".*?R\$[^>]*>([^<]+)<\/bdi>/gs;
+    for (const pattern of patterns) {
+      let match;
+      let matchCount = 0;
+      const maxMatches = 50; // Limit matches to prevent timeout
       
-      while ((match = simplePattern.exec(html)) !== null) {
+      while ((match = pattern.exec(limitedHtml)) !== null && matchCount < maxMatches) {
+        matchCount++;
         const [, url, name, priceText] = match;
         
         if (!name || !priceText || !url) continue;
         
+        // Clean and validate URL
+        const cleanUrl = url.trim();
+        if (!cleanUrl.includes('/produto/')) continue;
+        
+        // Clean and parse price
         const cleanPrice = priceText.replace(/[^\d,]/g, '').replace(',', '.');
         const price = parseFloat(cleanPrice);
         if (isNaN(price) || price <= 0) continue;
         
+        // Clean product name
+        const cleanName = name.trim()
+          .replace(/^Anel\s+/i, '')
+          .replace(/&[^;]+;/g, '') // Remove HTML entities
+          .replace(/\s+/g, ' '); // Normalize spaces
+        
+        if (cleanName.length < 3) continue; // Skip very short names
+        
+        // Extract one image quickly (don't search for all images to save time)
+        const images: string[] = [];
+        const imageMatch = limitedHtml.match(new RegExp(`<img[^>]*src="([^"]*(?:jpg|jpeg|png|webp)[^"]*)"[^>]*(?:alt="${cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}")?`, 'i'));
+        if (imageMatch && imageMatch[1] && imageMatch[1].includes('hubjoias')) {
+          images.push(imageMatch[1]);
+        }
+        
         products.push({
-          name: name.trim().replace(/^Anel\s+/i, ''),
+          name: cleanName,
           price,
-          images: [],
-          sourceUrl: url.startsWith('http') ? url : `https://www.hubjoias.com.br${url}`
+          images,
+          sourceUrl: cleanUrl.startsWith('http') ? cleanUrl : `https://www.hubjoias.com.br${cleanUrl}`
         });
+        
+        // Break if we found enough products
+        if (products.length >= 30) break;
       }
+      
+      // If we found products with this pattern, stop trying other patterns
+      if (products.length > 0) break;
     }
     
-    console.log(`Found ${products.length} products with names: ${products.map(p => p.name).join(', ')}`);
+    console.log(`Found ${products.length} products`);
     
   } catch (error) {
     console.error('Error parsing HTML:', error);
