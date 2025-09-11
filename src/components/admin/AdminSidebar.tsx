@@ -7,7 +7,8 @@ import {
   Users,
   Upload,
   FileText,
-  RefreshCw
+  RefreshCw,
+  Mail
 } from "lucide-react";
 import {
   Sidebar,
@@ -26,6 +27,7 @@ const menuItems = [
   { id: "update", label: "Atualizar Produtos", icon: RefreshCw },
   { id: "import", label: "Importar Produtos", icon: Upload },
   { id: "orders", label: "Pedidos", icon: ShoppingCart },
+  { id: "notifications", label: "Email Pedidos", icon: Mail },
   { id: "categories", label: "Categorias", icon: FolderOpen },
   { id: "coupons", label: "Cupons", icon: Ticket },
   { id: "users", label: "Usuários", icon: Users },
