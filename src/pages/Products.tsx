@@ -35,8 +35,8 @@ export default function Products() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("name");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [priceRange, setPriceRange] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [priceRange, setPriceRange] = useState("all");
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
@@ -86,12 +86,12 @@ export default function Products() {
       }
 
       // Apply category filter
-      if (filterCategory) {
+      if (filterCategory && filterCategory !== "all") {
         query = query.eq('category_id', filterCategory);
       }
 
       // Apply price range filter
-      if (priceRange) {
+      if (priceRange && priceRange !== "all") {
         const [min, max] = priceRange.split('-').map(Number);
         query = query.gte('price', min);
         if (max) {
@@ -263,7 +263,7 @@ export default function Products() {
                 <SelectValue placeholder="Todas as categorias" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as categorias</SelectItem>
+                <SelectItem value="all">Todas as categorias</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -279,7 +279,7 @@ export default function Products() {
                 <SelectValue placeholder="Faixa de preço" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os preços</SelectItem>
+                <SelectItem value="all">Todos os preços</SelectItem>
                 <SelectItem value="0-50">Até R$ 50</SelectItem>
                 <SelectItem value="50-100">R$ 50 - R$ 100</SelectItem>
                 <SelectItem value="100-200">R$ 100 - R$ 200</SelectItem>
@@ -316,8 +316,8 @@ export default function Products() {
               Tente ajustar os filtros ou fazer uma nova busca
             </p>
             <Button onClick={() => {
-              setFilterCategory("");
-              setPriceRange("");
+              setFilterCategory("all");
+              setPriceRange("all");
               setSortBy("name");
               navigate("/products");
             }}>
