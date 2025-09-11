@@ -31,16 +31,16 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Re-scraping product from image URL: ${imageUrl}`);
+    console.log(`Processing product ${productId} with SKU: ${sku}, Name: ${productName}`);
     
-    // Extract the base product URL from the image URL
-    let productUrl = extractProductUrlFromImage(imageUrl);
+    // Build product URL from SKU or product name
+    let productUrl = buildProductUrl(sku, productName, imageUrl);
     
     if (!productUrl) {
-      throw new Error('Could not extract product URL from image');
+      throw new Error('Could not build product URL from SKU, name, or image');
     }
 
-    console.log(`Extracted product URL: ${productUrl}`);
+    console.log(`Built product URL: ${productUrl}`);
     
     // Try multiple URL variations if the first one fails
     const urlVariations = [
@@ -79,32 +79,36 @@ serve(async (req) => {
     }
 
     if (!html) {
-      throw new Error(`All URL variations failed for product`);
+      throw new Error(`All URL variations failed for product ${sku || productName}`);
     }
-    const productData = extractProductData(html, finalUrl);
+    const productData = extractProductData(html, finalUrl, sku, productName);
     
     if (!productData) {
       throw new Error('Could not extract product data from page');
     }
 
-    console.log('Extracted product data:', productData);
+    console.log(`Extracted data for ${sku || productName}:`, productData);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         data: productData,
-        productId 
+        productId,
+        sku: sku || 'N/A',
+        sourceUrl: finalUrl
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error updating product:', error);
+    console.error(`Error updating product ${sku || productName}:`, error);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message,
+        productId,
+        sku: sku || 'N/A'
       }),
       { 
         status: 500,
@@ -113,6 +117,44 @@ serve(async (req) => {
     );
   }
 });
+
+function buildProductUrl(sku?: string, productName?: string, imageUrl?: string): string | null {
+  try {
+    // Priority 1: Use SKU if available
+    if (sku && sku.trim()) {
+      const cleanSku = sku.toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      console.log(`Building URL from SKU: ${sku} -> ${cleanSku}`);
+      return `https://www.hubjoias.com.br/produto/${cleanSku}/`;
+    }
+    
+    // Priority 2: Use product name
+    if (productName && productName.trim()) {
+      const cleanName = productName.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      console.log(`Building URL from product name: ${productName} -> ${cleanName}`);
+      return `https://www.hubjoias.com.br/produto/${cleanName}/`;
+    }
+    
+    // Priority 3: Fallback to image URL (legacy method)
+    if (imageUrl) {
+      console.log(`Falling back to image URL method: ${imageUrl}`);
+      return extractProductUrlFromImage(imageUrl);
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error building product URL:', error);
+    return null;
+  }
+}
 
 function extractProductUrlFromImage(imageUrl: string): string | null {
   try {
@@ -169,9 +211,9 @@ function extractProductUrlFromImage(imageUrl: string): string | null {
   }
 }
 
-function extractProductData(html: string, sourceUrl: string): ProductUpdate | null {
+function extractProductData(html: string, sourceUrl: string, sku?: string, productName?: string): ProductUpdate | null {
   try {
-    console.log('Extracting product data from HTML...');
+    console.log(`Extracting product data for SKU: ${sku}, Name: ${productName}`);
     
     // Extract product name
     let name = '';
@@ -199,8 +241,14 @@ function extractProductData(html: string, sourceUrl: string): ProductUpdate | nu
       }
     }
     
+    // Use the provided product name as fallback if extraction fails
+    if (!name && productName) {
+      name = productName;
+      console.log(`Using provided product name: ${name}`);
+    }
+    
     if (!name) {
-      console.log('Could not extract product name');
+      console.log('Could not extract or use product name');
       return null;
     }
 
@@ -364,7 +412,7 @@ function extractProductData(html: string, sourceUrl: string): ProductUpdate | nu
       description = generateProductDescription(name, productType, features);
     }
 
-    console.log(`Successfully extracted: ${name}, Cost: R$ ${costPrice}, Sale: R$ ${salePrice}, Weight: ${weight}g`);
+    console.log(`Successfully extracted data for ${sku || productName}: ${name}, Cost: R$ ${costPrice}, Sale: R$ ${salePrice}, Weight: ${weight}g`);
 
     return {
       id: '', // Will be set by caller
