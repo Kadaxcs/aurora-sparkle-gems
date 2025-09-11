@@ -9,6 +9,7 @@ interface Product {
   name: string;
   price: number;
   images: string[];
+  description?: string;
   sourceUrl: string;
 }
 
@@ -80,26 +81,28 @@ function extractProductsFromHtml(html: string): Product[] {
   const products: Product[] = [];
   
   try {
-    // Limit HTML size to prevent timeout
-    const maxHtmlSize = 500000; // 500KB limit
-    const limitedHtml = html.length > maxHtmlSize ? html.substring(0, maxHtmlSize) : html;
+    const limitedHtml = html.length > 1000000 ? html.substring(0, 1000000) : html;
     
-    // Updated patterns for HubJoias product structure
+    // Check if this is a single product page
+    if (limitedHtml.includes('class="product-title"') || limitedHtml.includes('class="entry-title"') || limitedHtml.includes('/produto/')) {
+      const product = extractSingleProduct(limitedHtml);
+      if (product) {
+        products.push(product);
+        return products;
+      }
+    }
+    
+    // Original category page extraction logic
     const patterns = [
-      // Pattern 1: WooCommerce product with title and price
       /<li[^>]*class="[^"]*product[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?<h2[^>]*class="[^"]*woocommerce-loop-product__title[^"]*"[^>]*>([^<]+)<\/h2>[\s\S]*?<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[^R]*R\$[^>]*>([^<]+)<\/bdi>/g,
-      
-      // Pattern 2: Simple product link with title and price
       /<div[^>]*class="[^"]*product[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]*\/produto\/[^"]*)"[^>]*>[\s\S]*?<h\d[^>]*>([^<]+)<\/h\d>[\s\S]*?R\$[^>]*>([^<]+)/g,
-      
-      // Pattern 3: Alternative structure
       /<article[^>]*class="[^"]*product[^"]*"[^>]*>[\s\S]*?href="([^"]*)"[\s\S]*?title="([^"]*)"[\s\S]*?R\$[^>]*>([^<]+)/g
     ];
     
     for (const pattern of patterns) {
       let match;
       let matchCount = 0;
-      const maxMatches = 50; // Limit matches to prevent timeout
+      const maxMatches = 50;
       
       while ((match = pattern.exec(limitedHtml)) !== null && matchCount < maxMatches) {
         matchCount++;
@@ -107,24 +110,20 @@ function extractProductsFromHtml(html: string): Product[] {
         
         if (!name || !priceText || !url) continue;
         
-        // Clean and validate URL
         const cleanUrl = url.trim();
         if (!cleanUrl.includes('/produto/')) continue;
         
-        // Clean and parse price
         const cleanPrice = priceText.replace(/[^\d,]/g, '').replace(',', '.');
         const price = parseFloat(cleanPrice);
         if (isNaN(price) || price <= 0) continue;
         
-        // Clean product name
         const cleanName = name.trim()
           .replace(/^Anel\s+/i, '')
-          .replace(/&[^;]+;/g, '') // Remove HTML entities
-          .replace(/\s+/g, ' '); // Normalize spaces
+          .replace(/&[^;]+;/g, '')
+          .replace(/\s+/g, ' ');
         
-        if (cleanName.length < 3) continue; // Skip very short names
+        if (cleanName.length < 3) continue;
         
-        // Extract one image quickly (don't search for all images to save time)
         const images: string[] = [];
         const imageMatch = limitedHtml.match(new RegExp(`<img[^>]*src="([^"]*(?:jpg|jpeg|png|webp)[^"]*)"[^>]*(?:alt="${cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}")?`, 'i'));
         if (imageMatch && imageMatch[1] && imageMatch[1].includes('hubjoias')) {
@@ -138,11 +137,9 @@ function extractProductsFromHtml(html: string): Product[] {
           sourceUrl: cleanUrl.startsWith('http') ? cleanUrl : `https://www.hubjoias.com.br${cleanUrl}`
         });
         
-        // Break if we found enough products
         if (products.length >= 30) break;
       }
       
-      // If we found products with this pattern, stop trying other patterns
       if (products.length > 0) break;
     }
     
@@ -153,4 +150,122 @@ function extractProductsFromHtml(html: string): Product[] {
   }
   
   return products;
+}
+
+function extractSingleProduct(html: string): Product | null {
+  try {
+    console.log('Extracting single product...');
+    
+    // Extract product name
+    let name = '';
+    const namePatterns = [
+      /<h1[^>]*class="[^"]*product-title[^"]*"[^>]*>([^<]+)<\/h1>/i,
+      /<h1[^>]*class="[^"]*entry-title[^"]*"[^>]*>([^<]+)<\/h1>/i,
+      /<title>([^<]*?)\s*[-|]\s*HubJoias[^<]*<\/title>/i,
+      /<h1[^>]*>([^<]+)<\/h1>/i
+    ];
+    
+    for (const pattern of namePatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        name = match[1].trim().replace(/^Anel\s+/i, '').replace(/&[^;]+;/g, '').replace(/\s+/g, ' ');
+        break;
+      }
+    }
+    
+    if (!name || name.length < 3) {
+      console.log('No valid product name found');
+      return null;
+    }
+    
+    // Extract price
+    let price = 0;
+    const pricePatterns = [
+      /<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[^R]*R\$[^>]*>([^<]+)<\/bdi>/i,
+      /<span[^>]*class="[^"]*price[^"]*"[^>]*>[^R]*R\$\s*([^<]+)<\/span>/i,
+      /R\$\s*([0-9.,]+)/i
+    ];
+    
+    for (const pattern of pricePatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        const cleanPrice = match[1].replace(/[^\d,]/g, '').replace(',', '.');
+        price = parseFloat(cleanPrice);
+        if (!isNaN(price) && price > 0) break;
+      }
+    }
+    
+    if (price <= 0) {
+      console.log('No valid price found');
+      return null;
+    }
+    
+    // Extract images
+    const images: string[] = [];
+    const imagePatterns = [
+      /<img[^>]*class="[^"]*wp-post-image[^"]*"[^>]*src="([^"]*(?:jpg|jpeg|png|webp)[^"]*)"[^>]*/gi,
+      /<img[^>]*data-src="([^"]*(?:jpg|jpeg|png|webp)[^"]*)"[^>]*/gi,
+      /<img[^>]*src="([^"]*(?:jpg|jpeg|png|webp)[^"]*)"[^>]*alt="[^"]*product[^"]*"/gi,
+      /<img[^>]*src="([^"]*(?:jpg|jpeg|png|webp)[^"]*)"[^>]*/gi
+    ];
+    
+    for (const pattern of imagePatterns) {
+      let match;
+      while ((match = pattern.exec(html)) !== null) {
+        const imageSrc = match[1];
+        if (imageSrc && 
+            imageSrc.includes('hubjoias') && 
+            !imageSrc.includes('logo') && 
+            !imageSrc.includes('placeholder') &&
+            !images.includes(imageSrc)) {
+          images.push(imageSrc);
+        }
+      }
+      if (images.length >= 5) break; // Limit to 5 images max
+    }
+    
+    // Extract description
+    let description = '';
+    const descPatterns = [
+      /<div[^>]*class="[^"]*woocommerce-product-details__short-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+      /<div[^>]*class="[^"]*product-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+      /<div[^>]*id="tab-description"[^>]*>([\s\S]*?)<\/div>/i,
+      /<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i
+    ];
+    
+    for (const pattern of descPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        description = match[1]
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/&[^;]+;/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (description.length > 20) break;
+      }
+    }
+    
+    // Fallback description
+    if (!description || description.length < 20) {
+      description = `${name} - Produto importado da HubJoias. Elegante e sofisticado, perfeito para qualquer ocasião.`;
+    }
+    
+    // Extract current URL for sourceUrl
+    const urlMatch = html.match(/<link[^>]*rel="canonical"[^>]*href="([^"]*)"[^>]*>/i);
+    const sourceUrl = urlMatch ? urlMatch[1] : '';
+    
+    console.log(`Extracted product: ${name}, Price: ${price}, Images: ${images.length}, Description length: ${description.length}`);
+    
+    return {
+      name,
+      price,
+      images,
+      description,
+      sourceUrl
+    };
+    
+  } catch (error) {
+    console.error('Error extracting single product:', error);
+    return null;
+  }
 }

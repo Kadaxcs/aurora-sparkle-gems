@@ -31,7 +31,7 @@ interface Category {
 }
 
 export const ProductImporterComponent = () => {
-  const [url, setUrl] = useState("https://www.hubjoias.com.br/categoria-produto/aneis/");
+  const [url, setUrl] = useState("https://www.hubjoias.com.br/produto/anel-dourado-solitario-ponto-de-luz-zirconia/");
   const [htmlContent, setHtmlContent] = useState("");
   const [importedProducts, setImportedProducts] = useState<ImportedProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -267,7 +267,7 @@ export const ProductImporterComponent = () => {
             price: product.price, // Using imported price as cost price
             sale_price: null, // User will set this manually
             sku: ProductImporter.generateSKU(product.name),
-            description: `<p>Produto importado de ${product.sourceUrl}</p><p>Preço de custo: R$ ${product.price.toFixed(2)}</p>`,
+            description: product.description || `<p>Produto importado de ${product.sourceUrl}</p><p>Preço de custo: R$ ${product.price.toFixed(2)}</p>`,
             short_description: product.name,
             images: product.images,
             category_id: selectedCategory,
@@ -342,13 +342,13 @@ export const ProductImporterComponent = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="url">URL da categoria de produtos</Label>
+            <Label htmlFor="url">URL do produto ou categoria</Label>
             <div className="flex gap-2">
               <Input
                 id="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://www.hubjoias.com.br/categoria-produto/aneis/"
+                placeholder="https://www.hubjoias.com.br/produto/nome-do-produto/ ou https://www.hubjoias.com.br/categoria-produto/aneis/"
               />
               <Button 
                 onClick={extractProductsFromUrl} 

@@ -1,4 +1,4 @@
-interface ImportedProduct {
+export interface ImportedProduct {
   name: string;
   price: number;
   images: string[];
