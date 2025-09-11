@@ -32,6 +32,7 @@ interface Category {
 
 export const ProductImporterComponent = () => {
   const [url, setUrl] = useState("https://www.hubjoias.com.br/produto/anel-dourado-solitario-ponto-de-luz-zirconia/");
+  const [bulkUrls, setBulkUrls] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
   const [importedProducts, setImportedProducts] = useState<ImportedProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -258,7 +259,7 @@ export const ProductImporterComponent = () => {
 
       for (let i = 0; i < selectedProducts.length; i++) {
         const product = selectedProducts[i];
-        setProgress((i / totalProducts) * 100);
+        setProgress(((i + 1) / totalProducts) * 100);
 
         try {
           const productData = {
@@ -281,7 +282,7 @@ export const ProductImporterComponent = () => {
 
           const { error } = await supabase
             .from('products')
-            .insert(productData);
+            .upsert(productData, { onConflict: 'slug' });
 
           if (error) {
             errors.push(`${product.name}: ${error.message}`);
@@ -325,9 +326,92 @@ export const ProductImporterComponent = () => {
       setProgress(0);
     }
   };
+  const extractProductsFromMultipleUrls = async () => {
+    const raw = bulkUrls.trim();
+    if (!raw) {
+      toast({
+        title: "Erro",
+        description: "Cole ao menos um link válido (um por linha)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const urls = Array.from(new Set(
+      raw
+        .split(/[\n\r,;\s]+/)
+        .map((u) => u.trim())
+        .filter(Boolean)
+    ));
+
+    setIsLoading(true);
+    setProgress(0);
+
+    try {
+      const allProducts: any[] = [];
+      const errors: string[] = [];
+
+      for (let i = 0; i < urls.length; i++) {
+        const currentUrl = urls[i];
+        try {
+          const { data, error } = await supabase.functions.invoke('scrape-hubjoias', {
+            body: { url: currentUrl }
+          });
+
+          if (error) throw error;
+
+          if (data?.success && Array.isArray(data.data)) {
+            allProducts.push(...data.data);
+          } else {
+            errors.push(`${currentUrl}: ${data?.error || 'Falha ao extrair dados'}`);
+          }
+        } catch (err) {
+          errors.push(`${currentUrl}: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+        }
+        setProgress(((i + 1) / urls.length) * 100);
+      }
+
+      const unique = new Map<string, any>();
+      allProducts.forEach((p) => {
+        const key = (p && (p.sourceUrl || p.name)) as string;
+        if (key && !unique.has(key)) {
+          unique.set(key, { ...p, selected: true });
+        }
+      });
+
+      const productsArr = Array.from(unique.values());
+      setImportedProducts(productsArr);
+
+      if (productsArr.length > 0) {
+        toast({
+          title: "Sucesso",
+          description: `${productsArr.length} produtos encontrados de ${urls.length} link(s)`,
+        });
+      } else {
+        toast({
+          title: "Aviso",
+          description: "Nenhum produto válido encontrado nos links enviados",
+          variant: "destructive",
+        });
+      }
+
+      if (errors.length > 0) {
+        setImportResults({ success: 0, errors });
+      }
+    } catch (error) {
+      console.error('Erro na extração em massa:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao processar os links",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setProgress(0);
+    }
+  };
 
   const selectedCount = importedProducts.filter(p => p.selected).length;
-
   return (
     <div className="space-y-6">
       <ImportExample />
@@ -359,6 +443,26 @@ export const ProductImporterComponent = () => {
                 Extrair da URL
               </Button>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bulk-urls">Ou cole vários links (um por linha)</Label>
+            <Textarea
+              id="bulk-urls"
+              value={bulkUrls}
+              onChange={(e) => setBulkUrls(e.target.value)}
+              placeholder={`https://www.hubjoias.com.br/produto/xxx\nhttps://www.hubjoias.com.br/produto/yyy`}
+              rows={4}
+            />
+            <Button 
+              onClick={extractProductsFromMultipleUrls}
+              disabled={isLoading}
+              variant="secondary"
+              className="whitespace-nowrap"
+            >
+              <Globe className="h-4 w-4 mr-2" />
+              Extrair dos Links
+            </Button>
           </div>
 
           <div className="space-y-2">
