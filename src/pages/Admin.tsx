@@ -6,6 +6,7 @@ import { AdminOrders } from "@/components/admin/AdminOrders";
 import { AdminCategories } from "@/components/admin/AdminCategories";
 import { AdminCoupons } from "@/components/admin/AdminCoupons";
 import { AdminProductImport } from "@/components/admin/AdminProductImport";
+import { ProductUpdatePanel } from "@/components/admin/ProductUpdatePanel";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminPages } from "@/components/admin/AdminPages";
 
@@ -21,6 +22,8 @@ export default function Admin() {
         return <AdminDashboard />;
       case "products":
         return <AdminProducts />;
+      case "update":
+        return <ProductUpdatePanel />;
       case "import":
         return <AdminProductImport />;
       case "orders":
