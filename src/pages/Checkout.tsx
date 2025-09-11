@@ -11,6 +11,7 @@ import { ArrowLeft, CreditCard, Smartphone, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
+import { FreightCalculator } from "@/components/FreightCalculator";
 
 interface CartItem {
   id: string;
@@ -49,6 +50,8 @@ export default function Checkout() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [freightCost, setFreightCost] = useState<number>(0);
+  const [freightDays, setFreightDays] = useState<number>(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -159,7 +162,11 @@ export default function Checkout() {
   };
 
   const getShippingCost = () => {
-    return 15.00; // Valor fixo de frete
+    const subtotal = getSubtotal();
+    if (subtotal >= 299) {
+      return 0; // Frete grátis acima de R$ 299
+    }
+    return freightCost;
   };
 
   const getTotal = () => {
@@ -177,6 +184,7 @@ export default function Checkout() {
         order_number: orderNumber,
         subtotal: getSubtotal(),
         shipping_cost: getShippingCost(),
+        shipping_days: freightDays,
         total: getTotal(),
         payment_method: checkoutData.paymentMethod,
         shipping_address: {
@@ -294,6 +302,16 @@ export default function Checkout() {
     }
   };
 
+  const handleFreightCalculated = (freight: any) => {
+    if (freight) {
+      setFreightCost(freight.price);
+      setFreightDays(freight.days);
+    } else {
+      setFreightCost(0);
+      setFreightDays(0);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -316,6 +334,17 @@ export default function Checkout() {
       toast({
         title: "CPF inválido",
         description: "Por favor, digite um CPF válido com 11 dígitos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar se frete foi calculado para compras abaixo de R$ 299
+    const subtotal = getSubtotal();
+    if (subtotal < 299 && freightCost === 0) {
+      toast({
+        title: "Erro",
+        description: "Calcule o frete antes de finalizar o pedido",
         variant: "destructive",
       });
       return;
@@ -503,6 +532,12 @@ export default function Checkout() {
                 </CardContent>
               </Card>
 
+              <FreightCalculator 
+                subtotal={getSubtotal()}
+                onFreightCalculated={handleFreightCalculated}
+                initialCep={checkoutData.zipCode}
+              />
+
               {/* Forma de Pagamento */}
               <Card>
                 <CardHeader>
@@ -588,8 +623,16 @@ export default function Checkout() {
                     </div>
                     <div className="flex justify-between">
                       <span>Frete:</span>
-                      <span>R$ {getShippingCost().toFixed(2)}</span>
+                      <span className={getSubtotal() >= 299 ? "text-green-600 font-medium" : ""}>
+                        {getSubtotal() >= 299 ? "GRÁTIS" : `R$ ${getShippingCost().toFixed(2)}`}
+                      </span>
                     </div>
+                    {freightDays > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Prazo de entrega:</span>
+                        <span>{freightDays} dias úteis</span>
+                      </div>
+                    )}
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total:</span>
