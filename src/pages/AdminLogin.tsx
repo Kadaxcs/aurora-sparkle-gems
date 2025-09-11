@@ -52,16 +52,26 @@ export default function AdminLogin() {
     checkAuth();
 
     // Listener para mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('AdminLogin: Auth state change:', event, session?.user?.id);
       setUser(session?.user || null);
       
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-        setProfile(profile);
+        // Usar setTimeout para evitar problemas de callback assíncrono
+        setTimeout(async () => {
+          try {
+            const { data: profile, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .single();
+            console.log('AdminLogin: Profile loaded:', profile, 'Error:', error);
+            setProfile(profile);
+          } catch (err) {
+            console.error('AdminLogin: Error loading profile:', err);
+            setProfile(null);
+          }
+        }, 0);
       } else {
         setProfile(null);
       }
