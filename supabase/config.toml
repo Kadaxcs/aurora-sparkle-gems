@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.create-mercadopago-payment]
 verify_jwt = false
+
+[functions.update-product-from-hubjoias]
+verify_jwt = false
+
+[functions.send-order-notification]
+verify_jwt = false
+
+[functions.send-customer-email]
+verify_jwt = false
