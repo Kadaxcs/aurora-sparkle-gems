@@ -53,10 +53,11 @@ export function AdminDashboard() {
         .from('products')
         .select('*', { count: 'exact', head: true });
 
-      // Buscar total de pedidos
+      // Buscar total de pedidos pagos (vendas efetivas)
       const { count: ordersCount } = await supabase
         .from('orders')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('payment_status', 'paid');
 
       // Buscar total de usuários
       const { count: usersCount } = await supabase
@@ -92,6 +93,7 @@ export function AdminDashboard() {
       const { data, error } = await supabase
         .from('orders')
         .select('id, order_number, status, payment_status, total, created_at')
+        .in('payment_status', ['paid', 'pending'])
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -110,8 +112,10 @@ export function AdminDashboard() {
           product_id,
           quantity,
           price,
-          products!inner(name)
-        `);
+          products!inner(name),
+          orders!inner(payment_status)
+        `)
+        .eq('orders.payment_status', 'paid');
 
       if (error) throw error;
 
@@ -175,7 +179,7 @@ export function AdminDashboard() {
       color: "text-blue-600"
     },
     {
-      title: "Total de Pedidos",
+      title: "Vendas Realizadas",
       value: stats.totalOrders,
       icon: ShoppingCart,
       color: "text-green-600"
@@ -198,7 +202,7 @@ export function AdminDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-serif text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral do seu negócio</p>
+        <p className="text-muted-foreground">Visão geral das vendas efetivadas (apenas pedidos pagos)</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -222,7 +226,7 @@ export function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-card-foreground">Pedidos Recentes</CardTitle>
+            <CardTitle className="text-card-foreground">Pedidos Recentes (Pagos/Pendentes)</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -262,7 +266,7 @@ export function AdminDashboard() {
 
         <Card className="border border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-card-foreground">Produtos Mais Vendidos</CardTitle>
+            <CardTitle className="text-card-foreground">Produtos Mais Vendidos (Apenas Vendas Pagas)</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
