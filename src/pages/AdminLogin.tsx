@@ -22,20 +22,31 @@ export default function AdminLogin() {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('AdminLogin: useEffect iniciado');
     // Verificar se já está logado
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        console.log('AdminLogin: Verificando autenticação...');
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        console.log('AdminLogin: User:', user, 'Error:', userError);
+        setUser(user);
 
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        setProfile(profile);
+        if (user) {
+          console.log('AdminLogin: Buscando perfil para user:', user.id);
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+          console.log('AdminLogin: Profile:', profile, 'Error:', profileError);
+          setProfile(profile);
+        }
+        setCheckingAuth(false);
+        console.log('AdminLogin: checkingAuth definido como false');
+      } catch (error) {
+        console.error('AdminLogin: Erro no checkAuth:', error);
+        setCheckingAuth(false);
       }
-      setCheckingAuth(false);
     };
 
     checkAuth();
@@ -108,7 +119,10 @@ export default function AdminLogin() {
     }
   };
 
+  console.log('AdminLogin: Render - checkingAuth:', checkingAuth, 'user:', user, 'profile:', profile);
+
   if (checkingAuth) {
+    console.log('AdminLogin: Mostrando tela de loading');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-dark">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div>
@@ -118,6 +132,7 @@ export default function AdminLogin() {
 
   // Se já está logado e é admin, redirecionar
   if (user && profile?.role === 'admin') {
+    console.log('AdminLogin: Redirecionando para /admin');
     return <Navigate to="/admin" replace />;
   }
 

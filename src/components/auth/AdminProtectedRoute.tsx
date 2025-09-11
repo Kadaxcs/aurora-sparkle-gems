@@ -12,19 +12,30 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AdminProtectedRoute: useEffect iniciado');
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        console.log('AdminProtectedRoute: Verificando autenticação...');
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        console.log('AdminProtectedRoute: User:', user, 'Error:', userError);
+        setUser(user);
 
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        setProfile(profile);
+        if (user) {
+          console.log('AdminProtectedRoute: Buscando perfil para user:', user.id);
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+          console.log('AdminProtectedRoute: Profile:', profile, 'Error:', profileError);
+          setProfile(profile);
+        }
+        setLoading(false);
+        console.log('AdminProtectedRoute: Loading definido como false');
+      } catch (error) {
+        console.error('AdminProtectedRoute: Erro no checkAuth:', error);
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkAuth();
@@ -49,7 +60,10 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
     return () => subscription.unsubscribe();
   }, []);
 
+  console.log('AdminProtectedRoute: Render - loading:', loading, 'user:', user, 'profile:', profile);
+
   if (loading) {
+    console.log('AdminProtectedRoute: Mostrando tela de loading');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -58,8 +72,10 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   }
 
   if (!user || profile?.role !== 'admin') {
+    console.log('AdminProtectedRoute: Redirecionando para login - user:', !!user, 'admin:', profile?.role === 'admin');
     return <Navigate to="/admin/login" replace />;
   }
 
+  console.log('AdminProtectedRoute: Renderizando children');
   return <>{children}</>;
 }
