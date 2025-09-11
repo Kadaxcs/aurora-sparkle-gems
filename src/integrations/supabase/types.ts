@@ -522,6 +522,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_verified_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      sanitize_profile_for_display: {
+        Args: {
+          p_first_name: string
+          p_last_name: string
+          p_phone: string
+          p_user_id: string
+        }
+        Returns: {
+          display_name: string
+          phone_masked: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       order_status:
