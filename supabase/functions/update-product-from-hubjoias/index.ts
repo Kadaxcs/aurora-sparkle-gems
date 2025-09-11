@@ -80,7 +80,51 @@ serve(async (req) => {
     }
 
     if (!html) {
-      throw new Error(`All URL variations failed for product ${sku || productName}`);
+      console.log('Direct URL fetch failed, trying search fallback...');
+      const searchQueries = [sku, productName].filter(Boolean) as string[];
+      for (const q of searchQueries) {
+        try {
+          const searchUrl = `https://www.hubjoias.com.br/?s=${encodeURIComponent(q!)}`;
+          console.log(`Searching HubJoias with: ${searchUrl}`);
+          const searchRes = await fetch(searchUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+              'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+              'Cache-Control': 'no-cache'
+            },
+            signal: AbortSignal.timeout(12000)
+          });
+          if (searchRes.ok) {
+            const searchHtml = await searchRes.text();
+            const firstLink = extractFirstProductLinkFromSearch(searchHtml);
+            if (firstLink) {
+              console.log(`Search found product link: ${firstLink}`);
+              const prodRes = await fetch(firstLink, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                  'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+                  'Cache-Control': 'no-cache'
+                },
+                signal: AbortSignal.timeout(12000)
+              });
+              if (prodRes.ok) {
+                html = await prodRes.text();
+                finalUrl = firstLink;
+                console.log('Fetched product page via search fallback');
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          console.log('Search attempt failed:', (e as Error).message);
+        }
+      }
+    }
+
+    if (!html) {
+      throw new Error(`All URL resolution methods failed for product ${sku || productName}`);
     }
     const productData = extractProductData(html, finalUrl, sku, productName);
     
@@ -208,6 +252,26 @@ function extractProductUrlFromImage(imageUrl: string): string | null {
     return null;
   } catch (error) {
     console.error('Error extracting product URL:', error);
+    return null;
+  }
+}
+
+function extractFirstProductLinkFromSearch(html: string): string | null {
+  try {
+    // Look for first product link in search results
+    const linkPattern = /href="(https?:\/\/www\.hubjoias\.com\.br\/(?:produto|produtos)\/[^"]+\/)"/i;
+    const match = html.match(linkPattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+    // Alternative: relative URLs
+    const relPattern = /href="(\/(?:produto|produtos)\/[^"]+\/)"/i;
+    const relMatch = html.match(relPattern);
+    if (relMatch && relMatch[1]) {
+      return `https://www.hubjoias.com.br${relMatch[1]}`;
+    }
+    return null;
+  } catch {
     return null;
   }
 }
