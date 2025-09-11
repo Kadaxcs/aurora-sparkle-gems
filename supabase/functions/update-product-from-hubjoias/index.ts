@@ -276,12 +276,71 @@ function extractFirstProductLinkFromSearch(html: string): string | null {
   }
 }
 
+function extractPriceFromJsonLd(html: string): number | null {
+  try {
+    const scriptRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+    let match;
+    while ((match = scriptRegex.exec(html)) !== null) {
+      const jsonText = match[1].trim();
+      try {
+        const data = JSON.parse(jsonText);
+        const nodes = Array.isArray(data) ? data : [data];
+        for (const node of nodes) {
+          // WooCommerce often nests Product -> offers -> price
+          if (node['@type'] === 'Product') {
+            const offers = Array.isArray(node.offers) ? node.offers[0] : node.offers;
+            const priceStr = offers?.price || node.price;
+            if (priceStr) {
+              const p = parseFloat(String(priceStr).replace(',', '.'));
+              if (!isNaN(p) && p > 0 && p < 1000) return p;
+            }
+          }
+          // Sometimes the script contains an array with different structures
+          if (node['@graph']) {
+            for (const g of node['@graph']) {
+              if (g['@type'] === 'Product') {
+                const offers = Array.isArray(g.offers) ? g.offers[0] : g.offers;
+                const priceStr = offers?.price || g.price;
+                if (priceStr) {
+                  const p = parseFloat(String(priceStr).replace(',', '.'));
+                  if (!isNaN(p) && p > 0 && p < 1000) return p;
+                }
+              }
+            }
+          }
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
+function extractPriceFromMetaTags(html: string): number | null {
+  try {
+    const patterns = [
+      /<meta[^>]*property=["']product:price:amount["'][^>]*content=["']([^"']+)["'][^>]*>/i,
+      /itemprop=["']price["'][^>]*content=["']([^"']+)["'][^>]*>/i,
+      /data-price=["']([^"']+)["']/i
+    ];
+    for (const rx of patterns) {
+      const m = html.match(rx);
+      if (m && m[1]) {
+        const p = parseFloat(m[1].replace(',', '.'));
+        if (!isNaN(p) && p > 0 && p < 1000) return p;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
 function getMainProductPriceHtml(html: string): string | null {
   try {
     const markers = [
       /summary\s+entry-summary/i,
-      /id="product-\d+"/i,
-      /class="product\s+type-product[^"]*"/i
+      /id=\"product-\d+\"/i,
+      /class=\"product\s+type-product[^\"]*\"/i
     ];
     for (const m of markers) {
       const idx = html.search(m);
@@ -356,17 +415,36 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
     console.log('Searching for price in HTML...');
     const searchHtml = getMainProductPriceHtml(html) || html;
     console.log('Using main product section:', searchHtml !== html);
-    
-    for (let i = 0; i < pricePatterns.length; i++) {
-      const pattern = pricePatterns[i];
-      const match = searchHtml.match(pattern);
-      if (match && match[1]) {
-        const cleanPrice = match[1].replace(/[^\d,]/g, '').replace(',', '.');
-        const price = parseFloat(cleanPrice);
-        if (!isNaN(price) && price > 0) {
-          costPrice = price;
-          console.log(`Found cost price with pattern ${i + 1}: R$ ${costPrice}`);
-          break;
+
+    // 1) Try JSON-LD first (most reliable)
+    let jsonLdPrice = extractPriceFromJsonLd(searchHtml) ?? extractPriceFromJsonLd(html);
+    if (jsonLdPrice && jsonLdPrice > 0) {
+      costPrice = jsonLdPrice;
+      console.log(`Price from JSON-LD: R$ ${costPrice}`);
+    }
+
+    // 2) Try meta tags
+    if (costPrice === 0) {
+      const metaPrice = extractPriceFromMetaTags(searchHtml) ?? extractPriceFromMetaTags(html);
+      if (metaPrice && metaPrice > 0) {
+        costPrice = metaPrice;
+        console.log(`Price from META: R$ ${costPrice}`);
+      }
+    }
+
+    // 3) Fallback to regex patterns in the main section
+    if (costPrice === 0) {
+      for (let i = 0; i < pricePatterns.length; i++) {
+        const pattern = pricePatterns[i];
+        const match = searchHtml.match(pattern);
+        if (match && match[1]) {
+          const cleanPrice = match[1].replace(/[^\d,]/g, '').replace(',', '.');
+          const price = parseFloat(cleanPrice);
+          if (!isNaN(price) && price > 0) {
+            costPrice = price;
+            console.log(`Found cost price with pattern ${i + 1}: R$ ${costPrice}`);
+            break;
+          }
         }
       }
     }
