@@ -37,8 +37,8 @@ serve(async (req) => {
 
     if (!productId) {
       return new Response(
-        JSON.stringify({ error: 'Product ID is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'Product ID is required' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -475,9 +475,12 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
     let costPrice = 0;
     let priceSource: 'jsonld' | 'meta' | 'regex' | 'estimated' = 'estimated';
     const pricePatterns = [
-      // Strict: within WooCommerce price elements only
-      /<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[\s\S]*?<bdi>\s*(?:R\$\s*)?([0-9.,]+)/i,
-      /<p[^>]*class="[^"]*price[^"]*"[^>]*>[\s\S]*?<bdi>\s*(?:R\$\s*)?([0-9.,]+)/i,
+      // Prefer sale price inside <ins> when available
+      /<ins[^>]*>[\s\S]*?<bdi>\s*(?:R\$\s*)?([0-9.,]+)\s*<\/bdi>[\s\S]*?<\/ins>/i,
+      // Price block container
+      /<p[^>]*class="[^"]*price[^"]*"[^>]*>[\s\S]*?<bdi>\s*(?:R\$\s*)?([0-9.,]+)\s*<\/bdi>/i,
+      // Generic WooCommerce amount
+      /<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[\s\S]*?<bdi>\s*(?:R\$\s*)?([0-9.,]+)\s*<\/bdi>/i,
     ];
     
     console.log('Searching for price in HTML...');
@@ -523,30 +526,31 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
     if (costPrice === 0) {
       console.log('Could not extract cost price, trying fallback methods...');
       
-      // Try to find any price mentioned in the page with broader search
+      // Try to find any price mentioned in the page within the main product section
       const fallbackPricePatterns = [
-        // Look for prices in specific HubJoias format
-        /R\$\s*(\d{1,3}(?:,\d{3})*(?:,\d{2})?)/g,
-        /(\d{1,3}(?:,\d{3})*,\d{2})/g,
-        // Standard decimal format  
-        /(\d+\.\d{2})/g,
-        // Any reasonable price range for jewelry
-        /\b(\d{2,3})[,.](\d{2})\b/g,
+        // HubJoias/WooCommerce common formats
+        /R\$\s*([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})/g,
+        /([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})/g,
+        // Standard decimal format
+        /([0-9]+\.[0-9]{2})/g,
+        // Split integer/decimal parts captured separately
+        /\b([0-9]{2,3})[,.]([0-9]{2})\b/g,
       ];
       
       for (const pattern of fallbackPricePatterns) {
         const priceMatches = [...searchHtml.matchAll(pattern)];
-        if (priceMatches && priceMatches.length > 0) {
-          // Use the first reasonable price found
-          for (const match of priceMatches) {
-            let priceStr = match[1];
-            if (match[2]) priceStr += '.' + match[2]; // Add decimal part
+        if (priceMatches.length > 0) {
+          for (const m of priceMatches) {
+            // Recompose and normalize BR format -> float
+            let priceStr = m[1];
+            if (m[2]) priceStr += ',' + m[2];
+            const normalized = priceStr.replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(',', '.');
+            const price = parseFloat(normalized);
             
-            let price = parseFloat(priceStr.replace(/[^\d.,]/g, '').replace(',', '.'));
-            
-            // HubJoias typical wholesale price range
-            if (price >= 15 && price <= 200) { 
+            // HubJoias typical wholesale price range (expand upper bound a bit)
+            if (!isNaN(price) && price >= 15 && price <= 400) {
               costPrice = price;
+              priceSource = 'regex';
               console.log(`Using fallback price: R$ ${costPrice}`);
               break;
             }
