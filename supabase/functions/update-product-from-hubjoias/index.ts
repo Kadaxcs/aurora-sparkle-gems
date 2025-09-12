@@ -363,10 +363,10 @@ function extractPriceFromJsonLd(html: string): number | null {
           // WooCommerce often nests Product -> offers -> price
           if (node['@type'] === 'Product') {
             const offers = Array.isArray(node.offers) ? node.offers[0] : node.offers;
-            const priceStr = offers?.price || node.price;
+            const priceStr = offers?.price ?? offers?.lowPrice ?? node.price ?? node.lowPrice;
             if (priceStr) {
-              const p = parseFloat(String(priceStr).replace(',', '.'));
-              if (!isNaN(p) && p > 0 && p < 1000) return p;
+              const p = parseFloat(String(priceStr).replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(',', '.'));
+              if (!isNaN(p) && p > 0 && p < 10000) return p;
             }
           }
           // Sometimes the script contains an array with different structures
@@ -374,10 +374,10 @@ function extractPriceFromJsonLd(html: string): number | null {
             for (const g of node['@graph']) {
               if (g['@type'] === 'Product') {
                 const offers = Array.isArray(g.offers) ? g.offers[0] : g.offers;
-                const priceStr = offers?.price || g.price;
+                const priceStr = offers?.price ?? offers?.lowPrice ?? g.price ?? g.lowPrice;
                 if (priceStr) {
-                  const p = parseFloat(String(priceStr).replace(',', '.'));
-                  if (!isNaN(p) && p > 0 && p < 1000) return p;
+                  const p = parseFloat(String(priceStr).replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(',', '.'));
+                  if (!isNaN(p) && p > 0 && p < 10000) return p;
                 }
               }
             }
@@ -401,7 +401,7 @@ function extractPriceFromMetaTags(html: string): number | null {
     for (const rx of patterns) {
       const m = html.match(rx);
       if (m && m[1]) {
-        const p = parseFloat(m[1].replace(',', '.'));
+        const p = parseFloat(m[1].replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(',', '.'));
         if (!isNaN(p) && p > 0 && p < 1000) return p;
       }
     }
@@ -414,7 +414,9 @@ function getMainProductPriceHtml(html: string): string | null {
     const markers = [
       /summary\s+entry-summary/i,
       /id=\"product-\d+\"/i,
-      /class=\"product\s+type-product[^\"]*\"/i
+      /class=\"product\s+type-product[^\"]*\"/i,
+      /class=\"price[^\"]*\"/i,
+      /woocommerce-Price-amount/i
     ];
     for (const m of markers) {
       const idx = html.search(m);
@@ -473,18 +475,9 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
     let costPrice = 0;
     let priceSource: 'jsonld' | 'meta' | 'regex' | 'estimated' = 'estimated';
     const pricePatterns = [
-      // WooCommerce price patterns
-      /<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[^R]*R\$[^>]*>&nbsp;([0-9,]+(?:\.[0-9]{2})?)<\/bdi>/i,
-      /<span[^>]*class="[^"]*amount[^"]*"[^>]*>R\$[^>]*>&nbsp;([0-9,]+(?:\.[0-9]{2})?)<\/span>/i,
-      // More flexible price patterns
-      /R\$[^>]*>&nbsp;([0-9,]+(?:\.[0-9]{2})?)/i,
-      /R\$\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      // Meta price patterns
-      /<meta[^>]*property="product:price:amount"[^>]*content="([^"]+)"/i,
-      // JSON-LD structured data
-      /"price"\s*:\s*"([0-9,]+(?:\.[0-9]{2})?)"/i,
-      // Alternative currency patterns
-      /currency[^>]*>.*?([0-9,]+(?:\.[0-9]{2})?)/i,
+      // Strict: within WooCommerce price elements only
+      /<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[\s\S]*?<bdi>\s*(?:R\$\s*)?([0-9.,]+)/i,
+      /<p[^>]*class="[^"]*price[^"]*"[^>]*>[\s\S]*?<bdi>\s*(?:R\$\s*)?([0-9.,]+)/i,
     ];
     
     console.log('Searching for price in HTML...');
