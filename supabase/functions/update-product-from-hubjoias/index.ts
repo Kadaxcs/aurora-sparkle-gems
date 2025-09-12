@@ -487,12 +487,20 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
     const searchHtml = getMainProductPriceHtml(html) || html;
     console.log('Using main product section:', searchHtml !== html);
 
-    // 1) Try JSON-LD first (most reliable)
-    let jsonLdPrice = extractPriceFromJsonLd(searchHtml) ?? extractPriceFromJsonLd(html);
-    if (jsonLdPrice && jsonLdPrice > 0) {
-      costPrice = jsonLdPrice;
-      priceSource = 'jsonld';
-      console.log(`Price from JSON-LD: R$ ${costPrice}`);
+    // 1) Try HTML price block first (WooCommerce visible price)
+    for (let i = 0; i < pricePatterns.length && costPrice === 0; i++) {
+      const pattern = pricePatterns[i];
+      const match = searchHtml.match(pattern);
+      if (match && match[1]) {
+        const cleanPrice = match[1].replace(/[^\d,]/g, '').replace(',', '.');
+        const price = parseFloat(cleanPrice);
+        if (!isNaN(price) && price > 0) {
+          costPrice = price;
+          priceSource = 'regex';
+          console.log(`Price from HTML (pattern ${i + 1}): R$ ${costPrice}`);
+          break;
+        }
+      }
     }
 
     // 2) Try meta tags
@@ -505,21 +513,13 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
       }
     }
 
-    // 3) Fallback to regex patterns in the main section
+    // 3) Try JSON-LD last (some pages embed generic or outdated values)
     if (costPrice === 0) {
-      for (let i = 0; i < pricePatterns.length; i++) {
-        const pattern = pricePatterns[i];
-        const match = searchHtml.match(pattern);
-        if (match && match[1]) {
-          const cleanPrice = match[1].replace(/[^\d,]/g, '').replace(',', '.');
-          const price = parseFloat(cleanPrice);
-          if (!isNaN(price) && price > 0) {
-            costPrice = price;
-            priceSource = 'regex';
-            console.log(`Found cost price with pattern ${i + 1}: R$ ${costPrice}`);
-            break;
-          }
-        }
+      const jsonLdPrice = extractPriceFromJsonLd(searchHtml) ?? extractPriceFromJsonLd(html);
+      if (jsonLdPrice && jsonLdPrice > 0) {
+        costPrice = jsonLdPrice;
+        priceSource = 'jsonld';
+        console.log(`Price from JSON-LD: R$ ${costPrice}`);
       }
     }
 
