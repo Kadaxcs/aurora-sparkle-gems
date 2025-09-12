@@ -430,6 +430,45 @@ function getMainProductPriceHtml(html: string): string | null {
   }
 }
 
+function extractPriceFromWooBlocks(html: string): number | null {
+  try {
+    // Prefer sale price inside <ins> if present
+    const ins = html.match(/<ins[^>]*>[\s\S]*?<bdi[^>]*>([\s\S]*?)<\/bdi>[\s\S]*?<\/ins>/i);
+    const parseBdi = (s: string) => {
+      const text = s
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const mm = text.match(/([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2}|[0-9]+(?:\.[0-9]{2}))/);
+      if (!mm) return null;
+      const normalized = mm[1].replace(/\./g, '').replace(',', '.');
+      const val = parseFloat(normalized);
+      return !isNaN(val) && val > 0 && val < 10000 ? val : null;
+    };
+    if (ins && ins[1]) {
+      const v = parseBdi(ins[1]);
+      if (v) return v;
+    }
+
+    // Then scan all WooCommerce amount blocks
+    const rx = /<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[\s\S]*?<bdi[^>]*>([\s\S]*?)<\/bdi>[\s\S]*?<\/span>/gi;
+    const vals: number[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = rx.exec(html)) !== null) {
+      const v = parseBdi(m[1]);
+      if (v && v > 0) vals.push(v);
+    }
+    if (vals.length) {
+      // When multiple numbers appear (del/ins), pick the lowest positive (sale)
+      return Math.min(...vals);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function extractProductData(html: string, sourceUrl: string, sku?: string, productName?: string): ProductUpdate | null {
   try {
     console.log(`Extracting product data for SKU: ${sku}, Name: ${productName}`);
@@ -487,20 +526,12 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
     const searchHtml = getMainProductPriceHtml(html) || html;
     console.log('Using main product section:', searchHtml !== html);
 
-    // 1) Try HTML price block first (WooCommerce visible price)
-    for (let i = 0; i < pricePatterns.length && costPrice === 0; i++) {
-      const pattern = pricePatterns[i];
-      const match = searchHtml.match(pattern);
-      if (match && match[1]) {
-        const cleanPrice = match[1].replace(/[^\d,]/g, '').replace(',', '.');
-        const price = parseFloat(cleanPrice);
-        if (!isNaN(price) && price > 0) {
-          costPrice = price;
-          priceSource = 'regex';
-          console.log(`Price from HTML (pattern ${i + 1}): R$ ${costPrice}`);
-          break;
-        }
-      }
+    // 1) Try HTML price blocks first (robust WooCommerce parsing)
+    const blockPrice = extractPriceFromWooBlocks(searchHtml);
+    if (blockPrice && blockPrice > 0) {
+      costPrice = blockPrice;
+      priceSource = 'regex';
+      console.log(`Price from Woo blocks: R$ ${costPrice}`);
     }
 
     // 2) Try meta tags
@@ -513,7 +544,7 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
       }
     }
 
-    // 3) Try JSON-LD last (some pages embed generic or outdated values)
+    // 3) Try JSON-LD last (sometimes generic)
     if (costPrice === 0) {
       const jsonLdPrice = extractPriceFromJsonLd(searchHtml) ?? extractPriceFromJsonLd(html);
       if (jsonLdPrice && jsonLdPrice > 0) {
@@ -531,8 +562,6 @@ function extractProductData(html: string, sourceUrl: string, sku?: string, produ
         // HubJoias/WooCommerce common formats
         /R\$\s*([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})/g,
         /([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})/g,
-        // Standard decimal format
-        /([0-9]+\.[0-9]{2})/g,
         // Split integer/decimal parts captured separately
         /\b([0-9]{2,3})[,.]([0-9]{2})\b/g,
       ];
