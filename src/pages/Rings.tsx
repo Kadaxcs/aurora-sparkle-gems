@@ -26,12 +26,39 @@ export default function Rings() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("name");
+  const [ringCategoryId, setRingCategoryId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    fetchRingCategoryId();
+  }, []);
+
+  useEffect(() => {
     fetchProducts();
-  }, [sortBy]);
+  }, [sortBy, ringCategoryId]);
+
+  const fetchRingCategoryId = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, slug, name')
+        .eq('is_active', true)
+        .or('slug.eq.aneis,name.ilike.%anéis%,name.ilike.%anel%')
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Erro ao buscar categoria Anéis:', error);
+        setRingCategoryId(null);
+        return;
+      }
+      setRingCategoryId(data?.id ?? null);
+    } catch (e) {
+      console.error('Erro ao buscar categoria Anéis:', e);
+      setRingCategoryId(null);
+    }
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -41,9 +68,12 @@ export default function Rings() {
         .select('*')
         .eq('is_active', true);
 
-      // Filtrar por categoria "anéis" - você pode ajustar isso baseado na sua estrutura de categorias
-      // Por ora, vou filtrar por nome que contenha "anel"
-      query = query.ilike('name', '%anel%');
+      // Filtrar por categoria "Anéis" via category_id quando disponível; fallback por nome
+      if (ringCategoryId) {
+        query = query.eq('category_id', ringCategoryId);
+      } else {
+        query = query.or('name.ilike.%anel%,name.ilike.%anéis%');
+      }
 
       // Ordenação
       if (sortBy === "price_asc") {
