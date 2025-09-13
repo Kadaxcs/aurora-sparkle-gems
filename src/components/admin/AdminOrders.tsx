@@ -30,6 +30,11 @@ interface Order {
   billing_address?: any;
   notes?: string;
   tracking_code?: string;
+  profiles?: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+  };
 }
 
 export function AdminOrders() {
@@ -47,11 +52,14 @@ export function AdminOrders() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          profiles(first_name, last_name, phone)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      setOrders((data as any[]) || []);
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
       toast({
@@ -130,6 +138,7 @@ export function AdminOrders() {
             <TableHeader>
               <TableRow>
                 <TableHead>Número do Pedido</TableHead>
+                <TableHead>Cliente</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Total</TableHead>
@@ -142,6 +151,24 @@ export function AdminOrders() {
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">
                     {order.order_number}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {order.profiles?.first_name && order.profiles?.last_name
+                          ? `${order.profiles.first_name} ${order.profiles.last_name}`
+                          : 'Cliente não identificado'
+                        }
+                      </span>
+                      {order.profiles?.phone && (
+                        <span className="text-sm text-muted-foreground">
+                          {order.profiles.phone}
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground font-mono">
+                        ID: {order.user_id?.slice(0, 8)}...
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(order.status)}

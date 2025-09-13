@@ -36,10 +36,13 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     setLoading(true);
 
     try {
+      const redirectUrl = `${window.location.origin}/`;
+      
       const { error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
@@ -51,8 +54,8 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
       if (error) throw error;
 
       toast({
-        title: "Conta criada!",
-        description: "Verifique seu email para confirmar a conta.",
+        title: "Conta criada com sucesso! 🎉",
+        description: "Você já pode fazer login e começar a comprar. Email de confirmação enviado.",
       });
       onOpenChange(false);
     } catch (error: any) {
@@ -186,20 +189,23 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
+                <Label htmlFor="phone">Telefone (opcional)</Label>
                 <Input
                   id="phone"
                   type="tel"
+                  placeholder="(11) 99999-9999"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="signup-password">Senha</Label>
+                <Label htmlFor="signup-password">Senha (mínimo 6 caracteres)</Label>
                 <div className="relative">
                   <Input
                     id="signup-password"
                     type={showPassword ? "text" : "password"}
+                    placeholder="Digite uma senha segura"
+                    minLength={6}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
@@ -218,6 +224,9 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     )}
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Use pelo menos 6 caracteres com letras e números
+                </p>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Criando conta..." : "Criar Conta"}
