@@ -126,11 +126,17 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verificar se é um email de admin autorizado
-    if (email !== 'kadaxyz1@gmail.com') {
-      console.log(`Unauthorized email reset attempt: ${email}`);
+    // Verificar se o usuário que está sendo resetado também é admin
+    const { data: targetProfile, error: targetProfileError } = await supabase
+      .from('profiles')
+      .select('role, user_id')
+      .eq('user_id', (await supabase.auth.admin.listUsers()).data.users.find(u => u.email === email)?.id || '')
+      .single();
+
+    if (targetProfileError || targetProfile?.role !== 'admin') {
+      console.log(`Password reset attempted for non-admin email: ${email}`);
       return new Response(
-        JSON.stringify({ error: 'Não autorizado para este email' }),
+        JSON.stringify({ error: 'Senha só pode ser resetada para usuários administradores' }),
         {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

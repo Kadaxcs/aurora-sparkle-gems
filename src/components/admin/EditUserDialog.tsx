@@ -69,6 +69,24 @@ export function EditUserDialog({
     setLoading(true);
 
     try {
+      // Get current user to prevent self-demotion
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      // Prevent admin from demoting themselves
+      if (currentUser?.id === user.user_id && user.role === 'admin' && formData.role !== 'admin') {
+        toast({
+          title: "Erro",
+          description: "Você não pode remover seu próprio acesso de administrador",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Log the role change for audit
+      if (user.role !== formData.role) {
+        console.log(`Admin ${currentUser?.email} changing user ${user.user_id} role from ${user.role} to ${formData.role}`);
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({

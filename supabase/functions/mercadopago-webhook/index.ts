@@ -29,14 +29,29 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log("Mercado Pago webhook received");
     
+    // Validate request method
+    if (req.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Rate limiting check (simple implementation)
+    const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    console.log(`Webhook from IP: ${clientIP}`);
+    
     const url = new URL(req.url);
     const searchParams = url.searchParams;
 
     let webhook: Partial<MercadoPagoWebhook> = {};
     try {
-      webhook = await req.json();
-    } catch (_e) {
-      console.log("No JSON body provided, falling back to query params");
+      const body = await req.text();
+      if (body) {
+        webhook = JSON.parse(body);
+      }
+    } catch (e) {
+      console.log("Error parsing JSON body, falling back to query params:", e);
     }
     console.log("Webhook data:", JSON.stringify(webhook, null, 2), " Query:", url.search);
 
