@@ -199,19 +199,31 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-8">
-          <button onClick={() => navigate("/")} className="hover:text-primary">
-            Início
-          </button>
-          <span>/</span>
-          <button onClick={() => navigate("/aneis")} className="hover:text-primary">
-            Anéis
-          </button>
-          <span>/</span>
-          <span className="text-foreground">{product.name}</span>
-        </nav>
+        <div className="container mx-auto px-4 py-8">
+          {/* Breadcrumb */}
+          {(() => {
+            const name = product.name.toLowerCase();
+            let cat = { label: 'Produtos', path: '/products' };
+            if (name.includes('anel')) cat = { label: 'Anéis', path: '/aneis' };
+            else if (name.includes('brinc')) cat = { label: 'Brincos', path: '/brincos' };
+            else if (name.includes('colar')) cat = { label: 'Colares', path: '/colares' };
+            else if (name.includes('pulseir')) cat = { label: 'Pulseiras', path: '/pulseiras' };
+            else if (name.includes('conjunto')) cat = { label: 'Conjuntos', path: '/conjuntos' };
+            return (
+              <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-8">
+                <button onClick={() => navigate("/")} className="hover:text-primary">
+                  Início
+                </button>
+                <span>/</span>
+                <button onClick={() => navigate(cat.path)} className="hover:text-primary">
+                  {cat.label}
+                </button>
+                <span>/</span>
+                <span className="text-foreground">{product.name}</span>
+              </nav>
+            );
+          })()}
+
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
           {/* Galeria de Imagens */}
