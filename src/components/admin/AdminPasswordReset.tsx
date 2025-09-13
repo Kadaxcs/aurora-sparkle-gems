@@ -8,11 +8,31 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function AdminPasswordReset() {
   const [email, setEmail] = useState("kadaxyz1@gmail.com");
-  const [newPassword, setNewPassword] = useState("123456");
+  const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const validatePassword = (password: string) => {
+    if (password.length < 12) {
+      return "A senha deve ter pelo menos 12 caracteres.";
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) {
+      return "A senha deve conter pelo menos: 1 letra minúscula, 1 maiúscula, 1 número e 1 caractere especial.";
+    }
+    return null;
+  };
+
   const handleReset = async () => {
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast({
+        title: "Senha inválida",
+        description: passwordError,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -31,6 +51,8 @@ export function AdminPasswordReset() {
         title: "Sucesso!",
         description: "Senha do administrador resetada com sucesso.",
       });
+
+      setNewPassword("");
 
     } catch (error: any) {
       console.error('Erro ao resetar senha:', error);
@@ -74,9 +96,13 @@ export function AdminPasswordReset() {
           />
         </div>
 
+        <div className="text-xs text-muted-foreground mb-2">
+          A senha deve ter pelo menos 12 caracteres com letra maiúscula, minúscula, número e caractere especial.
+        </div>
+
         <Button 
           onClick={handleReset} 
-          disabled={loading}
+          disabled={loading || !newPassword.trim()}
           className="w-full"
         >
           {loading ? "Resetando..." : "Resetar Senha"}
