@@ -19,6 +19,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Page from "./pages/Page";
 import JoiasPersonalizadas from "./pages/JoiasPersonalizadas";
 import CuidadosJoias from "./pages/CuidadosJoias";
+import MeusPedidos from "./pages/MeusPedidos";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/joias-personalizadas" element={<JoiasPersonalizadas />} />
           <Route path="/cuidados-joias" element={<CuidadosJoias />} />
+          <Route path="/meus-pedidos" element={<MeusPedidos />} />
           <Route path="/page/:slug" element={<Page />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

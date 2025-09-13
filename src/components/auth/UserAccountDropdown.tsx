@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Settings, LogOut, Shield } from "lucide-react";
+import { User, Settings, LogOut, Shield, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import {
@@ -85,6 +85,10 @@ export function UserAccountDropdown({ user }: UserAccountDropdownProps) {
           <DropdownMenuItem onClick={() => setProfileDialogOpen(true)}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Minha Conta</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/meus-pedidos')}>
+            <Package className="mr-2 h-4 w-4" />
+            <span>Meus Pedidos</span>
           </DropdownMenuItem>
           {isAdmin && (
             <>
