@@ -306,7 +306,6 @@ export default function Checkout() {
                 { id: "debit_card" },
                 { id: "digital_currency" },
                 { id: "digital_wallet" },
-                { id: "account_money" },
                 { id: "prepaid_card" },
                 { id: "voucher" }
               ]
@@ -318,7 +317,6 @@ export default function Checkout() {
                 { id: "debit_card" },
                 { id: "digital_currency" },
                 { id: "digital_wallet" },
-                { id: "account_money" },
                 { id: "prepaid_card" },
                 { id: "voucher" }
               ]
