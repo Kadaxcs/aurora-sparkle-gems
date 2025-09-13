@@ -27,6 +27,7 @@ export default function Rings() {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("name");
   const [ringCategoryId, setRingCategoryId] = useState<string | null>(null);
+  const [categoryResolved, setCategoryResolved] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -35,8 +36,9 @@ export default function Rings() {
   }, []);
 
   useEffect(() => {
+    if (!categoryResolved) return;
     fetchProducts();
-  }, [sortBy, ringCategoryId]);
+  }, [sortBy, ringCategoryId, categoryResolved]);
 
   const fetchRingCategoryId = async () => {
     try {
@@ -44,7 +46,7 @@ export default function Rings() {
         .from('categories')
         .select('id, slug, name')
         .eq('is_active', true)
-        .or('slug.eq.aneis,name.ilike.%anéis%,name.ilike.%anel%')
+        .or('slug.eq.aneis,name.ilike.*anéis*,name.ilike.*anel*')
         .limit(1)
         .maybeSingle();
 
@@ -57,6 +59,8 @@ export default function Rings() {
     } catch (e) {
       console.error('Erro ao buscar categoria Anéis:', e);
       setRingCategoryId(null);
+    } finally {
+      setCategoryResolved(true);
     }
   };
 
@@ -72,7 +76,7 @@ export default function Rings() {
       if (ringCategoryId) {
         query = query.eq('category_id', ringCategoryId);
       } else {
-        query = query.or('name.ilike.%anel%,name.ilike.%anéis%');
+        query = query.or('name.ilike.*anel*,name.ilike.*anéis*');
       }
 
       // Ordenação
