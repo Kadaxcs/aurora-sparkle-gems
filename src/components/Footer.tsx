@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "react-router-dom";
+import SecurityBadges from "@/components/SecurityBadges";
 
 export function Footer() {
   return (
@@ -150,6 +151,14 @@ export function Footer() {
         </div>
 
         <Separator className="my-8 bg-white/20" />
+
+        {/* Selos de Segurança */}
+        <div className="mb-6">
+          <div className="text-center">
+            <p className="text-sm text-gray-400 mb-4">Selos de Segurança e Confiança</p>
+            <SecurityBadges variant="compact" className="justify-center" />
+          </div>
+        </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 text-center md:text-left">
           <div className="text-sm text-gray-300">

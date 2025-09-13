@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { FreightCalculator } from "@/components/FreightCalculator";
+import SecurityBadges from "@/components/SecurityBadges";
 
 interface CartItem {
   id: string;
@@ -678,6 +679,13 @@ export default function Checkout() {
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total:</span>
                       <span>R$ {getTotal().toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="text-center mb-4">
+                      <p className="text-sm text-muted-foreground mb-3">Compra 100% Segura</p>
+                      <SecurityBadges variant="compact" showLabels={false} className="justify-center" />
                     </div>
                   </div>
 
