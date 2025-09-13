@@ -13,6 +13,7 @@ import { Package, ShoppingCart, Users, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import OrderStatusTester from "./OrderStatusTester";
+import { AdminAuditLog } from "./AdminAuditLog";
 
 interface RecentOrder {
   id: string;
@@ -305,7 +306,11 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
         
+      </div>
+      
+      <div className="grid grid-cols-1 gap-6">
         <OrderStatusTester />
+        <AdminAuditLog />
       </div>
     </div>
   );
