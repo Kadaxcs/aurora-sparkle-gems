@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Package, ShoppingCart, Users, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import OrderStatusTester from "./OrderStatusTester";
 
 interface RecentOrder {
   id: string;
@@ -303,6 +304,8 @@ export function AdminDashboard() {
             </Table>
           </CardContent>
         </Card>
+        
+        <OrderStatusTester />
       </div>
     </div>
   );

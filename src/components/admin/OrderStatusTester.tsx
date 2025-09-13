@@ -1,44 +1,39 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const OrderStatusTester = () => {
   const [orderId, setOrderId] = useState("");
-  const [newStatus, setNewStatus] = useState<"pending" | "paid" | "failed" | "refunded" | "">("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const updateOrderStatus = async () => {
-    if (!orderId.trim() || !newStatus) {
-      toast.error("Por favor, preencha todos os campos");
+  const testPaymentUpdate = async () => {
+    if (!orderId.trim()) {
+      toast.error("Por favor, insira um ID de pedido");
       return;
     }
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .update({ 
-          payment_status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId)
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('test-payment-update', {
+        body: { orderId: orderId.trim() }
+      });
 
       if (error) {
         throw error;
       }
 
-      toast.success(`Status do pedido atualizado para: ${newStatus}`);
-      console.log("Pedido atualizado:", data);
+      if (data.success) {
+        toast.success(`Pedido ${orderId} atualizado para status: ${data.newStatus}`);
+        console.log("Update result:", data);
+      } else {
+        toast.error(`Erro: ${data.error}`);
+      }
     } catch (error: any) {
-      console.error("Erro ao atualizar pedido:", error);
-      toast.error(`Erro: ${error.message}`);
+      console.error("Error testing payment update:", error);
+      toast.error(`Erro ao testar atualização: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -47,47 +42,31 @@ const OrderStatusTester = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>🧪 Teste de Atualização de Status</CardTitle>
+        <CardTitle>Teste de Atualização de Pagamento</CardTitle>
+        <CardDescription>
+          Use esta ferramenta para testar manualmente a atualização de status de pagamento de um pedido
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="order-id">ID do Pedido</Label>
+        <div className="flex gap-2">
           <Input
-            id="order-id"
-            placeholder="Digite o ID do pedido..."
+            placeholder="ID do Pedido (UUID)"
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
+            className="flex-1"
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="status">Novo Status de Pagamento</Label>
-          <Select value={newStatus} onValueChange={(value) => setNewStatus(value as "pending" | "paid" | "failed" | "refunded")}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pendente</SelectItem>
-              <SelectItem value="paid">Pago</SelectItem>
-              <SelectItem value="failed">Falhou</SelectItem>
-              <SelectItem value="refunded">Reembolsado</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button 
+            onClick={testPaymentUpdate}
+            disabled={isLoading || !orderId.trim()}
+          >
+            {isLoading ? "Testando..." : "Testar Pagamento"}
+          </Button>
         </div>
         
-        <Button 
-          onClick={updateOrderStatus}
-          disabled={isLoading}
-          className="w-full"
-        >
-          {isLoading ? "Atualizando..." : "Atualizar Status"}
-        </Button>
-
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-          <p className="text-yellow-700 text-sm">
-            ⚠️ Esta funcionalidade é apenas para teste. Quando você mudar um pedido para "Pago", 
-            os emails automáticos deverão ser disparados pelos triggers.
-          </p>
+        <div className="text-sm text-muted-foreground">
+          <p>• Este teste irá marcar o pedido como "pago"</p>
+          <p>• Emails de confirmação serão enviados automaticamente</p>
+          <p>• Use um ID de pedido existente da lista de pedidos</p>
         </div>
       </CardContent>
     </Card>

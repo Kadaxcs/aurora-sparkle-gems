@@ -40,24 +40,10 @@ const handler = async (req: Request): Promise<Response> => {
     }
     console.log("Webhook data:", JSON.stringify(webhook, null, 2), " Query:", url.search);
 
-    // Verificar se é uma notificação de pagamento (aceitar created/updated e query params)
-    const isPaymentEvent =
-      webhook.type === "payment" ||
-      (webhook.action && webhook.action.startsWith("payment.")) ||
-      searchParams.get("type") === "payment" ||
-      searchParams.get("topic") === "payment";
-
-    if (!isPaymentEvent) {
-      console.log("Not a payment webhook, ignoring");
-      return new Response(JSON.stringify({ received: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
+    // Aceitar qualquer tipo de notificação de pagamento
     const paymentId = (webhook as any)?.data?.id || searchParams.get("data.id") || searchParams.get("id");
     if (!paymentId) {
-      console.log("No payment ID found in webhook");
+      console.log("No payment ID found in webhook, accepting anyway");
       return new Response(JSON.stringify({ received: true }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
