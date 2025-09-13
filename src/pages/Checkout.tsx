@@ -241,13 +241,25 @@ export default function Checkout() {
 
   const createMercadoPagoPayment = async (order: any) => {
     try {
-      const paymentData = {
-        items: cartItems.map(item => ({
-          title: item.products.name,
-          quantity: item.quantity,
-          unit_price: getItemPrice(item),
+      const items = cartItems.map(item => ({
+        title: item.products.name,
+        quantity: item.quantity,
+        unit_price: getItemPrice(item),
+        currency_id: "BRL",
+      }));
+
+      // Adicionar frete como item separado se houver
+      if (freightCost > 0) {
+        items.push({
+          title: "Frete",
+          quantity: 1,
+          unit_price: freightCost,
           currency_id: "BRL",
-        })),
+        });
+      }
+
+      const paymentData = {
+        items,
         payer: {
           name: checkoutData.firstName,
           surname: checkoutData.lastName,
