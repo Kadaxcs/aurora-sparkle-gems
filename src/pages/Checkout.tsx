@@ -258,6 +258,13 @@ export default function Checkout() {
         });
       }
 
+      // Sanitize MP-required numeric fields
+      const phoneDigits = (checkoutData.phone || '').replace(/\D/g, '');
+      const areaCode = phoneDigits.slice(0, 2);
+      const phoneNumber = phoneDigits.slice(2);
+      const documentDigits = (checkoutData.document || '').replace(/\D/g, '');
+      const zipDigits = (checkoutData.zipCode || '').replace(/\D/g, '');
+
       const paymentData = {
         items,
         payer: {
@@ -265,20 +272,20 @@ export default function Checkout() {
           surname: checkoutData.lastName,
           email: checkoutData.email,
           phone: {
-            area_code: checkoutData.phone.substring(0, 2),
-            number: checkoutData.phone.substring(2),
+            area_code: areaCode,
+            number: phoneNumber,
           },
           identification: {
-            type: "CPF",
-            number: checkoutData.document,
+            type: 'CPF',
+            number: documentDigits,
           },
           address: {
             street_name: checkoutData.street,
             street_number: checkoutData.number,
-            zip_code: checkoutData.zipCode,
+            zip_code: zipDigits,
             city: checkoutData.city,
             state: checkoutData.state,
-            country: "BR",
+            country: 'BR',
           },
         },
         back_urls: {
