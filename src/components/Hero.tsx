@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import heroRing from "@/assets/hero-ring.jpg";
 
 export const Hero = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
@@ -40,10 +43,20 @@ export const Hero = () => {
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button variant="luxury" size="lg" className="min-w-48">
+          <Button 
+            variant="luxury" 
+            size="lg" 
+            className="min-w-48"
+            onClick={() => navigate('/aneis')}
+          >
             DESCOBRIR ANÉIS
           </Button>
-          <Button variant="ghost-luxury" size="lg" className="min-w-48">
+          <Button 
+            variant="ghost-luxury" 
+            size="lg" 
+            className="min-w-48"
+            onClick={() => navigate('/products')}
+          >
             Ver Todas as Joias
           </Button>
         </div>
