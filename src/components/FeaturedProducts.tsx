@@ -6,6 +6,7 @@ import { Star, Heart, ShoppingCart, Sparkles, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "@/hooks/useCart";
 
 interface Product {
   id: string;
@@ -23,9 +24,14 @@ export function FeaturedProducts() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const { addToCart: addToCartHook } = useCart(user);
 
   useEffect(() => {
     fetchFeaturedProducts();
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ?? null);
+    });
   }, []);
 
   const fetchFeaturedProducts = async () => {
@@ -85,41 +91,7 @@ export function FeaturedProducts() {
     }
   };
 
-  const addToCart = async (productId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Login necessário",
-          description: "Faça login para adicionar ao carrinho",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('cart_items')
-        .insert({ 
-          product_id: productId, 
-          user_id: user.id,
-          quantity: 1
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso!",
-        description: "Produto adicionado ao carrinho",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível adicionar ao carrinho",
-        variant: "destructive",
-      });
-    }
-  };
+  // Substituído: agora usamos useCart para suportar carrinho de convidado
 
   const calculateDiscount = (price: number, salePrice?: number) => {
     if (!salePrice) return 0;
@@ -228,7 +200,7 @@ export function FeaturedProducts() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              addToCart(product.id);
+                              addToCartHook(product.id);
                             }}
                             className="backdrop-blur-sm"
                           >
@@ -286,7 +258,7 @@ export function FeaturedProducts() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => addToCart(product.id)}
+                          onClick={() => addToCartHook(product.id)}
                           className="hover:bg-primary hover:text-primary-foreground"
                         >
                           <ShoppingCart className="h-4 w-4" />
