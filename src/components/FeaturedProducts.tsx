@@ -191,7 +191,7 @@ export function FeaturedProducts() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => navigate(`/product/${product.slug}`)}
+                            onClick={() => navigate(`/produto/${product.id}`)}
                             className="backdrop-blur-sm"
                           >
                             Ver Detalhes
