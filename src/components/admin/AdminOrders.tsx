@@ -51,23 +51,46 @@ export function AdminOrders() {
   const fetchOrders = async () => {
     try {
       console.log('Fetching orders...');
-      const { data, error } = await supabase
+      const { data: ordersData, error } = await supabase
         .from('orders')
-        .select(`
-          *,
-          profiles(first_name, last_name, phone)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('Orders query result:', { data, error });
+      console.log('Orders query result:', { data: ordersData, error });
       
       if (error) {
         console.error('Supabase error:', error);
         throw error;
       }
+
+      // Try to enrich with profile data in a second query (no FK relationship exists)
+      const ordersList = (ordersData as any[]) || [];
+      const userIds = Array.from(new Set(ordersList.map(o => o.user_id).filter(Boolean)));
+      let profilesMap: Record<string, { first_name?: string; last_name?: string; phone?: string }> = {};
+
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, phone')
+          .in('user_id', userIds);
+
+        if (!profilesError && profilesData) {
+          profilesMap = profilesData.reduce((acc: any, p: any) => {
+            acc[p.user_id] = { first_name: p.first_name, last_name: p.last_name, phone: p.phone };
+            return acc;
+          }, {} as Record<string, any>);
+        } else if (profilesError) {
+          console.warn('Não foi possível carregar perfis vinculados:', profilesError);
+        }
+      }
+
+      const enriched = ordersList.map((o: any) => ({
+        ...o,
+        profiles: o.user_id ? profilesMap[o.user_id] : undefined,
+      }));
       
-      setOrders((data as any[]) || []);
-      console.log('Orders set successfully:', data);
+      setOrders(enriched);
+      console.log('Orders set successfully:', enriched);
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
       toast({
