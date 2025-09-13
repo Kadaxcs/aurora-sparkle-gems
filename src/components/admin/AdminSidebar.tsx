@@ -8,7 +8,8 @@ import {
   Upload,
   FileText,
   RefreshCw,
-  Mail
+  Mail,
+  Webhook
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +29,7 @@ const menuItems = [
   { id: "import", label: "Importar Produtos", icon: Upload },
   { id: "orders", label: "Pedidos", icon: ShoppingCart },
   { id: "notifications", label: "Email Pedidos", icon: Mail },
+  { id: "webhook", label: "Webhook Mercado Pago", icon: Webhook },
   { id: "categories", label: "Categorias", icon: FolderOpen },
   { id: "coupons", label: "Cupons", icon: Ticket },
   { id: "users", label: "Usuários", icon: Users },
