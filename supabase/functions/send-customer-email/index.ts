@@ -45,11 +45,6 @@ const handler = async (req: Request): Promise<Response> => {
             images,
             sku
           )
-        ),
-        profiles (
-          first_name,
-          last_name,
-          phone
         )
       `)
       .eq('id', orderId)
@@ -60,6 +55,13 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Pedido não encontrado: ${orderError?.message}`);
     }
 
+    // Fetch profile separately to avoid schema cache issues
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, phone')
+      .eq('user_id', order.user_id)
+      .single();
+
     // Get customer email from auth.users
     const { data: user, error: userError } = await supabase.auth.admin.getUserById(order.user_id);
     
@@ -69,7 +71,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const customerEmail = user.user.email;
-    const customerName = `${order.profiles?.first_name || ''} ${order.profiles?.last_name || ''}`.trim() || 'Cliente';
+    const customerName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Cliente' : 'Cliente';
     
     // Generate email content based on type
     const emailContent = generateEmailContent(order, emailType, customerName, trackingCode);

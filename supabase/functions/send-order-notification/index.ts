@@ -65,11 +65,6 @@ const handler = async (req: Request): Promise<Response> => {
             sku,
             weight
           )
-        ),
-        profiles (
-          first_name,
-          last_name,
-          phone
         )
       `)
       .eq('id', orderId)
@@ -85,10 +80,26 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Pedido não encontrado ou não está pago');
     }
 
+    // Fetch profile separately to avoid schema cache issues
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, phone')
+      .eq('user_id', order.user_id)
+      .single();
+
+    if (orderError) {
+      console.error('Error fetching order:', orderError);
+      throw new Error(`Pedido não encontrado: ${orderError.message}`);
+    }
+
+    if (!order) {
+      throw new Error('Pedido não encontrado ou não está pago');
+    }
+
     console.log(`Order found: ${order.order_number}`);
 
     // Format order data for email
-    const customerName = `${order.profiles?.first_name || ''} ${order.profiles?.last_name || ''}`.trim() || 'Cliente';
+    const customerName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Cliente' : 'Cliente';
     const shippingAddress = order.shipping_address;
     const orderItems = order.order_items || [];
 
@@ -144,7 +155,7 @@ const handler = async (req: Request): Promise<Response> => {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
               <p><strong>👤 Cliente:</strong> ${customerName}</p>
-              <p><strong>📞 Telefone:</strong> ${order.profiles?.phone || 'Não informado'}</p>
+              <p><strong>📞 Telefone:</strong> ${profile?.phone || 'Não informado'}</p>
               <p><strong>📧 Email:</strong> ${order.user_id ? 'Disponível no admin' : 'Não disponível'}</p>
             </div>
             <div>
