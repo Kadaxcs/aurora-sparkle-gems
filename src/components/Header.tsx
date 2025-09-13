@@ -15,6 +15,7 @@ import { CartSidebar } from "@/components/cart/CartSidebar";
 import { SearchDialog } from "@/components/SearchDialog";
 import { WishlistDialog } from "@/components/WishlistDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/hooks/useCart";
 
 export function Header() {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
@@ -22,6 +23,7 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const { getTotalItems } = useCart(user);
   const [cartItemsCount, setCartItemsCount] = useState(0);
 
   useEffect(() => {
@@ -29,9 +31,6 @@ export function Header() {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      if (user) {
-        fetchCartItemsCount(user.id);
-      }
     };
 
     getUser();
@@ -39,31 +38,19 @@ export function Header() {
     // Listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
-      if (session?.user) {
-        fetchCartItemsCount(session.user.id);
-      } else {
-        setCartItemsCount(0);
-      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchCartItemsCount = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('cart_items')
-        .select('quantity')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      
-      const totalItems = data?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-      setCartItemsCount(totalItems);
-    } catch (error) {
-      console.error('Erro ao buscar itens do carrinho:', error);
-    }
-  };
+  // Update cart count from hook
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCartItemsCount(getTotalItems());
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, [getTotalItems]);
 
 
   return (

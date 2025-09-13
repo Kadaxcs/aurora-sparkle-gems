@@ -10,6 +10,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/useCart";
 
 interface Product {
   id: string;
@@ -41,6 +42,7 @@ export default function Products() {
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { addToCart } = useCart(user);
 
   const searchQuery = searchParams.get("search") || "";
 
@@ -174,58 +176,8 @@ export default function Products() {
     }
   };
 
-  const addToCart = async (productId: string) => {
-    if (!user) {
-      toast({
-        title: "Login necessário",
-        description: "Faça login para adicionar ao carrinho",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Check if item already exists in cart
-      const { data: existingItem } = await supabase
-        .from('cart_items')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('product_id', productId)
-        .single();
-
-      if (existingItem) {
-        // Update quantity
-        const { error } = await supabase
-          .from('cart_items')
-          .update({ quantity: existingItem.quantity + 1 })
-          .eq('id', existingItem.id);
-
-        if (error) throw error;
-      } else {
-        // Insert new item
-        const { error } = await supabase
-          .from('cart_items')
-          .insert([{
-            user_id: user.id,
-            product_id: productId,
-            quantity: 1,
-          }]);
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: "Adicionado ao carrinho",
-        description: "Item adicionado com sucesso",
-      });
-    } catch (error) {
-      console.error('Erro ao adicionar ao carrinho:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível adicionar ao carrinho",
-        variant: "destructive",
-      });
-    }
+  const handleAddToCart = async (productId: string) => {
+    await addToCart(productId);
   };
 
   const getPrice = (product: Product) => {
@@ -362,7 +314,7 @@ export default function Products() {
                     <Button
                       size="icon"
                       variant="secondary"
-                      onClick={() => addToCart(product.id)}
+                      onClick={() => handleAddToCart(product.id)}
                     >
                       <ShoppingCart className="h-4 w-4" />
                     </Button>

@@ -1,23 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-
-interface CartItem {
-  id: string;
-  product_id: string;
-  quantity: number;
-  products: {
-    name: string;
-    price: number;
-    sale_price?: number;
-    images: any;
-  };
-}
+import { Minus, Plus, Trash2, ShoppingBag, User } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 
 interface CartSidebarProps {
   open: boolean;
@@ -26,103 +13,24 @@ interface CartSidebarProps {
 }
 
 export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const {
+    cartItems,
+    loading,
+    updateQuantity,
+    removeItem,
+    getItemPrice,
+    getTotal,
+    migrateLocalCartToUser
+  } = useCart(user);
 
+  // Migrate local cart when user logs in
   useEffect(() => {
-    if (user && open) {
-      fetchCartItems();
+    if (user) {
+      migrateLocalCartToUser();
     }
-  }, [user, open]);
+  }, [user]);
 
-  const fetchCartItems = async () => {
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('cart_items')
-        .select(`
-          *,
-          products (
-            name,
-            price,
-            sale_price,
-            images
-          )
-        `)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      setCartItems(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar carrinho:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-
-    try {
-      const { error } = await supabase
-        .from('cart_items')
-        .update({ quantity: newQuantity })
-        .eq('id', itemId);
-
-      if (error) throw error;
-
-      setCartItems(items => 
-        items.map(item => 
-          item.id === itemId ? { ...item, quantity: newQuantity } : item
-        )
-      );
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar a quantidade",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const removeItem = async (itemId: string) => {
-    try {
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('id', itemId);
-
-      if (error) throw error;
-
-      setCartItems(items => items.filter(item => item.id !== itemId));
-      
-      toast({
-        title: "Produto removido",
-        description: "O produto foi removido do carrinho",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível remover o produto",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getItemPrice = (item: CartItem) => {
-    return item.products.sale_price || item.products.price;
-  };
-
-  const getTotal = () => {
-    return cartItems.reduce((total, item) => {
-      return total + (getItemPrice(item) * item.quantity);
-    }, 0);
-  };
-
-  const getItemImage = (item: CartItem) => {
+  const getItemImage = (item: any) => {
     const images = item.products.images;
     if (images && Array.isArray(images) && images.length > 0) {
       return images[0];
@@ -130,23 +38,8 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
     return null;
   };
 
-  if (!user) {
-    return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle className="font-serif text-primary">Carrinho</SheetTitle>
-          </SheetHeader>
-          <div className="flex flex-col items-center justify-center h-full">
-            <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground text-center">
-              Faça login para ver seus produtos no carrinho
-            </p>
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-  }
+  // Show cart content for both logged in and guest users
+  const showLoginPrompt = !user && cartItems.length === 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -164,6 +57,16 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
         {loading ? (
           <div className="flex items-center justify-center flex-1">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : showLoginPrompt ? (
+          <div className="flex flex-col items-center justify-center flex-1">
+            <User className="h-16 w-16 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center mb-4">
+              Faça login para sincronizar seu carrinho
+            </p>
+            <p className="text-sm text-muted-foreground text-center">
+              Você pode adicionar produtos mesmo sem login
+            </p>
           </div>
         ) : cartItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1">
@@ -259,11 +162,15 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
                 <Button 
                   className="w-full bg-primary hover:bg-primary/90 h-12"
                   onClick={() => {
+                    if (!user) {
+                      alert('Faça login para finalizar a compra');
+                      return;
+                    }
                     onOpenChange(false);
                     window.location.href = '/checkout';
                   }}
                 >
-                  Finalizar Compra
+                  {user ? 'Finalizar Compra' : 'Login para Finalizar'}
                 </Button>
                 <Button 
                   variant="outline" 

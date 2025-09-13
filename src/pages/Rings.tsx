@@ -10,6 +10,7 @@ import { Heart, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SizeSelector } from "@/components/SizeSelector";
+import { useCart } from "@/hooks/useCart";
 
 interface Product {
   id: string;
@@ -29,10 +30,17 @@ export default function Rings() {
   const [sortBy, setSortBy] = useState("name");
   const [ringCategoryId, setRingCategoryId] = useState<string | null>(null);
   const [categoryResolved, setCategoryResolved] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { addToCart } = useCart(user);
 
   useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
     fetchRingCategoryId();
   }, []);
 
@@ -105,68 +113,18 @@ export default function Rings() {
     }
   };
 
-  const addToCart = async (productId: string, selectedSize?: number) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Login necessário",
-          description: "Faça login para adicionar produtos ao carrinho",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Verificar se o produto é um anel e se o tamanho foi selecionado
-      const product = products.find(p => p.id === productId);
-      if (product?.available_sizes && product.available_sizes.length > 0 && !selectedSize) {
-        toast({
-          title: "Tamanho obrigatório",
-          description: "Por favor, selecione o tamanho do anel antes de adicionar ao carrinho",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data: existingItem } = await supabase
-        .from('cart_items')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('product_id', productId)
-        .single();
-
-      if (existingItem) {
-        const { error } = await supabase
-          .from('cart_items')
-          .update({ quantity: existingItem.quantity + 1 })
-          .eq('id', existingItem.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('cart_items')
-          .insert({
-            user_id: user.id,
-            product_id: productId,
-            quantity: 1
-          });
-
-        if (error) throw error;
-      }
-
+  const handleAddToCart = async (productId: string, selectedSize?: number) => {
+    // For rings, size is required
+    if (!selectedSize) {
       toast({
-        title: "Produto adicionado",
-        description: `O anel${selectedSize ? ` (tamanho ${selectedSize})` : ''} foi adicionado ao carrinho`,
-      });
-    } catch (error) {
-      console.error('Erro ao adicionar ao carrinho:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível adicionar o anel ao carrinho",
+        title: "Tamanho necessário",
+        description: "Selecione um tamanho para adicionar ao carrinho",
         variant: "destructive",
       });
+      return;
     }
+
+    await addToCart(productId, 1, selectedSize?.toString());
   };
 
   const getProductImage = (product: Product) => {
@@ -266,7 +224,7 @@ export default function Rings() {
                         productId={product.id}
                         productName={product.name}
                         availableSizes={product.available_sizes || []}
-                        onAddToCart={addToCart}
+                        onAddToCart={handleAddToCart}
                         trigger={
                           <Button variant="secondary" size="sm">
                             <ShoppingCart className="h-4 w-4" />
@@ -304,7 +262,7 @@ export default function Rings() {
                         productId={product.id}
                         productName={product.name}
                         availableSizes={product.available_sizes || []}
-                        onAddToCart={addToCart}
+                        onAddToCart={handleAddToCart}
                         trigger={
                           <Button 
                             size="sm" 
