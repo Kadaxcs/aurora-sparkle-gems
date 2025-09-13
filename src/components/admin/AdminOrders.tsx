@@ -50,6 +50,7 @@ export function AdminOrders() {
 
   const fetchOrders = async () => {
     try {
+      console.log('Fetching orders...');
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -58,8 +59,15 @@ export function AdminOrders() {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('Orders query result:', { data, error });
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
       setOrders((data as any[]) || []);
+      console.log('Orders set successfully:', data);
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
       toast({
