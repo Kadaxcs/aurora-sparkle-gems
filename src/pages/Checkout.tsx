@@ -294,6 +294,7 @@ export default function Checkout() {
           pending: `${window.location.origin}/pedido-confirmado/${order.id}?status=pending`,
         },
         auto_return: "approved",
+        binary_mode: true,
         payment_methods: {
           excluded_payment_methods: [],
           excluded_payment_types: checkoutData.paymentMethod === "credit_card" ? 
