@@ -32,6 +32,13 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
     }
   }, [user]);
 
+  // Refresh cart when sidebar opens (ensures guest cart sync)
+  useEffect(() => {
+    if (open) {
+      try { window.dispatchEvent(new CustomEvent('cart:updated')); } catch {}
+    }
+  }, [open]);
+
   const getItemImage = (item: any) => {
     const images = item.products.images;
     if (images && Array.isArray(images) && images.length > 0) {

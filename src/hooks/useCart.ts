@@ -27,8 +27,26 @@ export function useCart(user: any) {
   const { toast } = useToast();
 
   // Load cart items when user changes or component mounts
+  // Load on mount and when auth state changes
   useEffect(() => {
     loadCartItems();
+  }, [user]);
+
+  // Listen for cart updates across components/tabs
+  useEffect(() => {
+    const handleCartUpdated = () => {
+      loadCartItems();
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'cart_items') handleCartUpdated();
+    };
+
+    window.addEventListener('cart:updated', handleCartUpdated as EventListener);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('cart:updated', handleCartUpdated as EventListener);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [user]);
 
   const loadCartItems = async () => {
@@ -111,6 +129,12 @@ export function useCart(user: any) {
     localStorage.setItem('cart_items', JSON.stringify(items));
   };
 
+  const notifyCartUpdated = () => {
+    try {
+      window.dispatchEvent(new CustomEvent('cart:updated'));
+    } catch {}
+  };
+
   const addToCart = async (productId: string, quantity: number = 1, size?: string) => {
     try {
       if (user) {
@@ -164,6 +188,7 @@ export function useCart(user: any) {
     }
 
     await loadAuthenticatedCart();
+    notifyCartUpdated();
   };
 
   const addToLocalCart = async (productId: string, quantity: number, size?: string) => {
@@ -180,6 +205,7 @@ export function useCart(user: any) {
 
     setLocalCartItems(localItems);
     await loadLocalCart();
+    notifyCartUpdated();
   };
 
   const updateQuantity = async (itemId: string, newQuantity: number) => {
@@ -214,6 +240,7 @@ export function useCart(user: any) {
           item.id === itemId ? { ...item, quantity: newQuantity } : item
         )
       );
+      notifyCartUpdated();
     } catch (error) {
       toast({
         title: "Erro",
@@ -245,6 +272,7 @@ export function useCart(user: any) {
       }
 
       setCartItems(items => items.filter(item => item.id !== itemId));
+      notifyCartUpdated();
       
       toast({
         title: "Produto removido",
@@ -274,6 +302,7 @@ export function useCart(user: any) {
       // Clear local storage after migration
       localStorage.removeItem('cart_items');
       await loadAuthenticatedCart();
+      notifyCartUpdated();
     } catch (error) {
       console.error('Erro ao migrar carrinho local:', error);
     }
