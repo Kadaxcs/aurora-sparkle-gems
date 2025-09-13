@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Heart, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { SizeSelector } from "@/components/SizeSelector";
 
 interface Product {
   id: string;
@@ -104,7 +105,7 @@ export default function Rings() {
     }
   };
 
-  const addToCart = async (productId: string) => {
+  const addToCart = async (productId: string, selectedSize?: number) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -112,6 +113,17 @@ export default function Rings() {
         toast({
           title: "Login necessário",
           description: "Faça login para adicionar produtos ao carrinho",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar se o produto é um anel e se o tamanho foi selecionado
+      const product = products.find(p => p.id === productId);
+      if (product?.available_sizes && product.available_sizes.length > 0 && !selectedSize) {
+        toast({
+          title: "Tamanho obrigatório",
+          description: "Por favor, selecione o tamanho do anel antes de adicionar ao carrinho",
           variant: "destructive",
         });
         return;
@@ -145,7 +157,7 @@ export default function Rings() {
 
       toast({
         title: "Produto adicionado",
-        description: "O anel foi adicionado ao carrinho",
+        description: `O anel${selectedSize ? ` (tamanho ${selectedSize})` : ''} foi adicionado ao carrinho`,
       });
     } catch (error) {
       console.error('Erro ao adicionar ao carrinho:', error);
@@ -250,16 +262,17 @@ export default function Rings() {
                       <Button variant="secondary" size="sm">
                         <Heart className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart(product.id);
-                        }}
-                      >
-                        <ShoppingCart className="h-4 w-4" />
-                      </Button>
+                      <SizeSelector
+                        productId={product.id}
+                        productName={product.name}
+                        availableSizes={product.available_sizes || []}
+                        onAddToCart={addToCart}
+                        trigger={
+                          <Button variant="secondary" size="sm">
+                            <ShoppingCart className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
                     </div>
                   </div>
                   
@@ -286,16 +299,21 @@ export default function Rings() {
                         )}
                       </div>
                       
-                      <Button 
-                        size="sm" 
-                        className="bg-primary hover:bg-primary/90"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart(product.id);
-                        }}
-                      >
-                        Adicionar
-                      </Button>
+                      
+                      <SizeSelector
+                        productId={product.id}
+                        productName={product.name}
+                        availableSizes={product.available_sizes || []}
+                        onAddToCart={addToCart}
+                        trigger={
+                          <Button 
+                            size="sm" 
+                            className="bg-primary hover:bg-primary/90"
+                          >
+                            Adicionar
+                          </Button>
+                        }
+                      />
                     </div>
                   </div>
                 </CardContent>
