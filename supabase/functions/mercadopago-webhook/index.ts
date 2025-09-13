@@ -29,20 +29,41 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log("Mercado Pago webhook received");
     
-    const webhook: MercadoPagoWebhook = await req.json();
-    console.log("Webhook data:", JSON.stringify(webhook, null, 2));
+    const url = new URL(req.url);
+    const searchParams = url.searchParams;
 
-    // Verificar se é uma notificação de pagamento
-    if (webhook.type !== "payment" || webhook.action !== "payment.updated") {
-      console.log("Not a payment update webhook, ignoring");
+    let webhook: Partial<MercadoPagoWebhook> = {};
+    try {
+      webhook = await req.json();
+    } catch (_e) {
+      console.log("No JSON body provided, falling back to query params");
+    }
+    console.log("Webhook data:", JSON.stringify(webhook, null, 2), " Query:", url.search);
+
+    // Verificar se é uma notificação de pagamento (aceitar created/updated e query params)
+    const isPaymentEvent =
+      webhook.type === "payment" ||
+      (webhook.action && webhook.action.startsWith("payment.")) ||
+      searchParams.get("type") === "payment" ||
+      searchParams.get("topic") === "payment";
+
+    if (!isPaymentEvent) {
+      console.log("Not a payment webhook, ignoring");
       return new Response(JSON.stringify({ received: true }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    const paymentId = webhook.data.id;
-    console.log(`Processing payment update for payment ID: ${paymentId}`);
+    const paymentId = (webhook as any)?.data?.id || searchParams.get("data.id") || searchParams.get("id");
+    if (!paymentId) {
+      console.log("No payment ID found in webhook");
+      return new Response(JSON.stringify({ received: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    console.log(`Processing payment webhook for payment ID: ${paymentId}`);
 
     // Buscar detalhes do pagamento no Mercado Pago
     const mpToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");

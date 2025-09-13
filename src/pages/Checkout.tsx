@@ -295,6 +295,8 @@ export default function Checkout() {
           pending: `${window.location.origin}/pedido-confirmado/${order.id}?status=pending`,
         },
         auto_return: "approved",
+        // Ensure MP notifies our backend
+        notification_url: "https://vmhpmgiozhfzkzymvmaq.supabase.co/functions/v1/mercadopago-webhook",
         binary_mode: true,
         payment_methods: {
           excluded_payment_methods: [],
