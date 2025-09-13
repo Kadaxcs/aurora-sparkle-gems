@@ -319,8 +319,11 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Tamanho */}
-            {product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && (
+            {/* Tamanho - apenas para anéis */}
+            {product.available_sizes && 
+             Array.isArray(product.available_sizes) && 
+             product.available_sizes.length > 0 && 
+             (product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis')) && (
               <div className="space-y-3">
                 <label className="text-sm font-medium">Tamanho:</label>
                 <Select value={selectedSize} onValueChange={setSelectedSize}>
@@ -380,7 +383,8 @@ export default function ProductDetail() {
                 disabled={
                   addingToCart || 
                   product.stock_quantity === 0 || 
-                  (product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize)
+                  ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis')) && 
+                   product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize)
                 }
                 className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
               >
@@ -388,7 +392,8 @@ export default function ProductDetail() {
                   "Adicionando..."
                 ) : product.stock_quantity === 0 ? (
                   "Fora de Estoque"
-                ) : (product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize) ? (
+                ) : ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis')) && 
+                     product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize) ? (
                   "Selecione um Tamanho"
                 ) : (
                   <>
@@ -436,10 +441,12 @@ export default function ProductDetail() {
               </CardContent>
             </Card>
 
-            {/* Como Descobrir o Tamanho */}
-            <Button variant="outline" className="w-full">
-              COMO DESCOBRIR O TAMANHO
-            </Button>
+            {/* Como Descobrir o Tamanho - apenas para anéis */}
+            {(product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis')) && (
+              <Button variant="outline" className="w-full">
+                COMO DESCOBRIR O TAMANHO
+              </Button>
+            )}
           </div>
         </div>
 
