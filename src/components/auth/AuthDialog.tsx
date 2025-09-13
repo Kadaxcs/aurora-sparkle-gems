@@ -17,9 +17,11 @@ import { Eye, EyeOff } from "lucide-react";
 interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  title?: string;
+  description?: string;
 }
 
-export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
+export function AuthDialog({ open, onOpenChange, title = "Minha Conta", description = "Entre na sua conta ou crie uma nova para continuar" }: AuthDialogProps) {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -101,9 +103,9 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-serif text-primary">Minha Conta</DialogTitle>
+          <DialogTitle className="font-serif text-primary">{title}</DialogTitle>
           <DialogDescription>
-            Entre na sua conta ou crie uma nova para continuar
+            {description}
           </DialogDescription>
         </DialogHeader>
 

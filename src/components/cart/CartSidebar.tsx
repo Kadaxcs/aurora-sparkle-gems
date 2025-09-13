@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, Trash2, ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { AuthDialog } from "@/components/auth/AuthDialog";
 
 interface CartSidebarProps {
   open: boolean;
@@ -13,6 +14,7 @@ interface CartSidebarProps {
 }
 
 export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const {
     cartItems,
     loading,
@@ -163,7 +165,7 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
                   className="w-full bg-primary hover:bg-primary/90 h-12"
                   onClick={() => {
                     if (!user) {
-                      alert('Faça login para finalizar a compra');
+                      setAuthDialogOpen(true);
                       return;
                     }
                     onOpenChange(false);
@@ -186,6 +188,19 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
             </div>
           </>
         )}
+        
+        <AuthDialog 
+          open={authDialogOpen} 
+          onOpenChange={(open) => {
+            setAuthDialogOpen(open);
+            // Fechar o carrinho após login bem-sucedido
+            if (!open && user) {
+              onOpenChange(false);
+            }
+          }}
+          title="Login ou Registro para Finalizar"
+          description="Entre na sua conta ou crie uma nova para finalizar sua compra"
+        />
       </SheetContent>
     </Sheet>
   );
