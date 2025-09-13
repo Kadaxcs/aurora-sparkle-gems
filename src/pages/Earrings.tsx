@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +26,7 @@ export default function Earrings() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("name");
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -186,7 +188,11 @@ export default function Earrings() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
-              <Card key={product.id} className="group hover:shadow-elegant transition-all duration-300">
+              <Card 
+                key={product.id} 
+                className="group hover:shadow-elegant transition-all duration-300 cursor-pointer"
+                onClick={() => navigate(`/produto/${product.id}`)}
+              >
                 <CardContent className="p-0">
                   <div className="relative overflow-hidden rounded-t-lg">
                     <img
