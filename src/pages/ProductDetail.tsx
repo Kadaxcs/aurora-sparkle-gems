@@ -112,8 +112,9 @@ export default function ProductDetail() {
   const handleAddToCart = async () => {
     if (!product) return;
 
-    // If product requires size, enforce it
-    const requiresSize = product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0;
+    // Only rings require size selection
+    const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis');
+    const requiresSize = isRing && product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0;
     if (requiresSize && !selectedSize) {
       toast({
         title: "Tamanho necessário",
@@ -308,10 +309,13 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Tamanho - exibir sempre que houver tamanhos disponíveis */}
-            {product.available_sizes && 
-             Array.isArray(product.available_sizes) && 
-             product.available_sizes.length > 0 && (
+            {/* Tamanho - apenas para anéis que possuem tamanhos disponíveis */}
+            {(() => {
+              const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis');
+              return isRing && product.available_sizes && 
+                     Array.isArray(product.available_sizes) && 
+                     product.available_sizes.length > 0;
+            })() && (
 
               <div className="space-y-3">
                 <label className="text-sm font-medium">Tamanho:</label>
@@ -372,7 +376,10 @@ export default function ProductDetail() {
                 disabled={
                   addingToCart || 
                   product.stock_quantity === 0 || 
-                  (product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize)
+                  (() => {
+                    const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis');
+                    return isRing && product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize;
+                  })()
                 }
                 className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
               >
@@ -380,8 +387,10 @@ export default function ProductDetail() {
                   "Adicionando..."
                 ) : product.stock_quantity === 0 ? (
                   "Fora de Estoque"
-                ) : ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis')) && 
-                     product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize) ? (
+                ) : (() => {
+                  const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis');
+                  return isRing && product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize;
+                })() ? (
                   "Selecione um Tamanho"
                 ) : (
                   <>
