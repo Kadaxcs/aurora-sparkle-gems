@@ -27,6 +27,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
+import { SizeGuide } from "@/components/SizeGuide";
 
 interface Product {
   id: string;
@@ -443,9 +444,11 @@ export default function ProductDetail() {
 
             {/* Como Descobrir o Tamanho - apenas para anéis */}
             {(product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis')) && (
-              <Button variant="outline" className="w-full">
-                COMO DESCOBRIR O TAMANHO
-              </Button>
+              <SizeGuide>
+                <Button variant="outline" className="w-full">
+                  COMO DESCOBRIR O TAMANHO
+                </Button>
+              </SizeGuide>
             )}
           </div>
         </div>
