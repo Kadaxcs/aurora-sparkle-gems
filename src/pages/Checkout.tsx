@@ -297,11 +297,33 @@ export default function Checkout() {
         binary_mode: true,
         payment_methods: {
           excluded_payment_methods: [],
-          excluded_payment_types: checkoutData.paymentMethod === "credit_card" ? 
-            [{ id: "ticket" }, { id: "bank_transfer" }] : 
-            checkoutData.paymentMethod === "pix" ?
-            [{ id: "ticket" }, { id: "credit_card" }] :
-            [{ id: "credit_card" }, { id: "bank_transfer" }],
+          excluded_payment_types: checkoutData.paymentMethod === "credit_card"
+            ? [
+                { id: "ticket" },
+                { id: "bank_transfer" },
+                { id: "atm" },
+                { id: "debit_card" },
+                { id: "digital_currency" },
+                { id: "digital_wallet" },
+                { id: "account_money" },
+                { id: "prepaid_card" },
+                { id: "voucher" }
+              ]
+            : checkoutData.paymentMethod === "pix"
+            ? [
+                { id: "ticket" },
+                { id: "credit_card" },
+                { id: "atm" },
+                { id: "debit_card" },
+                { id: "digital_currency" },
+                { id: "digital_wallet" },
+                { id: "account_money" },
+                { id: "prepaid_card" },
+                { id: "voucher" }
+              ]
+            : [
+                { id: "ticket" }
+              ],
           installments: 12,
         },
         external_reference: order.id,
