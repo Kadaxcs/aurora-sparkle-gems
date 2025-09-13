@@ -296,11 +296,11 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Tamanho - apenas para anéis */}
+            {/* Tamanho - exibir sempre que houver tamanhos disponíveis */}
             {product.available_sizes && 
              Array.isArray(product.available_sizes) && 
-             product.available_sizes.length > 0 && 
-             (product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis')) && (
+             product.available_sizes.length > 0 && (
+
               <div className="space-y-3">
                 <label className="text-sm font-medium">Tamanho:</label>
                 <Select value={selectedSize} onValueChange={setSelectedSize}>
@@ -360,8 +360,7 @@ export default function ProductDetail() {
                 disabled={
                   addingToCart || 
                   product.stock_quantity === 0 || 
-                  ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis')) && 
-                   product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize)
+                  (product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize)
                 }
                 className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
               >
