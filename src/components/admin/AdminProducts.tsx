@@ -10,12 +10,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Eye } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Edit, Trash2, Eye, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddProductDialog } from "./AddProductDialog";
 import { EditProductDialog } from "./EditProductDialog";
 import { DeleteProductDialog } from "./DeleteProductDialog";
+import { BulkStockUpdateDialog } from "./BulkStockUpdateDialog";
 
 interface Product {
   id: string;
@@ -41,8 +43,10 @@ export function AdminProducts() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkStockDialogOpen, setBulkStockDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -153,6 +157,39 @@ export function AdminProducts() {
     setEditDialogOpen(true);
   };
 
+  const toggleSelectAll = () => {
+    if (selectedProducts.length === products.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(products.map(p => p.id));
+    }
+  };
+
+  const toggleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleBulkStockUpdate = () => {
+    if (selectedProducts.length === 0) {
+      toast({
+        title: "Aviso",
+        description: "Selecione pelo menos um produto",
+        variant: "destructive",
+      });
+      return;
+    }
+    setBulkStockDialogOpen(true);
+  };
+
+  const handleBulkUpdateSuccess = () => {
+    fetchProducts();
+    setSelectedProducts([]);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -168,13 +205,24 @@ export function AdminProducts() {
           <h1 className="text-3xl font-serif text-foreground">Produtos</h1>
           <p className="text-muted-foreground">Gerencie o catálogo de produtos</p>
         </div>
-        <Button 
-          className="bg-primary hover:bg-primary/90"
-          onClick={() => setAddDialogOpen(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Produto
-        </Button>
+        <div className="flex space-x-2">
+          {selectedProducts.length > 0 && (
+            <Button 
+              variant="outline"
+              onClick={handleBulkStockUpdate}
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Alterar Estoque ({selectedProducts.length})
+            </Button>
+          )}
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => setAddDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Produto
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -185,6 +233,12 @@ export function AdminProducts() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedProducts.length === products.length && products.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Preço</TableHead>
                 <TableHead>Estoque</TableHead>
@@ -196,6 +250,12 @@ export function AdminProducts() {
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedProducts.includes(product.id)}
+                      onCheckedChange={() => toggleSelectProduct(product.id)}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">
@@ -273,6 +333,13 @@ export function AdminProducts() {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteProduct}
         productName={productToDelete?.name || ""}
+      />
+
+      <BulkStockUpdateDialog
+        open={bulkStockDialogOpen}
+        onOpenChange={setBulkStockDialogOpen}
+        selectedProductIds={selectedProducts}
+        onSuccess={handleBulkUpdateSuccess}
       />
     </div>
   );
