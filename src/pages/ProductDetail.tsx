@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { SizeGuide } from "@/components/SizeGuide";
+import { useCart } from "@/hooks/useCart";
 
 interface Product {
   id: string;
@@ -106,56 +107,31 @@ export default function ProductDetail() {
     }
   };
 
-  const addToCart = async () => {
-    if (!user) {
+  const { addToCart } = useCart(user);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+
+    // If product requires size, enforce it
+    const requiresSize = product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0;
+    if (requiresSize && !selectedSize) {
       toast({
-        title: "Login necessário",
-        description: "Você precisa estar logado para adicionar produtos ao carrinho",
+        title: "Tamanho necessário",
+        description: "Selecione um tamanho antes de adicionar ao carrinho",
         variant: "destructive",
       });
       return;
     }
 
-    if (!product) return;
-
     setAddingToCart(true);
     try {
-      // Verificar se já existe no carrinho
-      const { data: existingItem } = await supabase
-        .from('cart_items')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('product_id', product.id)
-        .single();
-
-      if (existingItem) {
-        // Atualizar quantidade
-        const { error } = await supabase
-          .from('cart_items')
-          .update({ quantity: existingItem.quantity + quantity })
-          .eq('id', existingItem.id);
-
-        if (error) throw error;
-      } else {
-        // Adicionar novo item
-        const { error } = await supabase
-          .from('cart_items')
-          .insert([{
-            user_id: user.id,
-            product_id: product.id,
-            quantity: quantity
-          }]);
-
-        if (error) throw error;
-      }
-
+      await addToCart(product.id, quantity, selectedSize || undefined);
       toast({
         title: "Produto adicionado!",
         description: "O produto foi adicionado ao seu carrinho",
       });
-
     } catch (error) {
-      console.error('Erro ao adicionar ao carrinho:', error);
+      console.error('Erro ao adicionar ao carrinho (guest):', error);
       toast({
         title: "Erro",
         description: "Não foi possível adicionar o produto ao carrinho",
@@ -380,7 +356,7 @@ export default function ProductDetail() {
             {/* Botões de Ação */}
             <div className="space-y-3">
               <Button
-                onClick={addToCart}
+                onClick={handleAddToCart}
                 disabled={
                   addingToCart || 
                   product.stock_quantity === 0 || 

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Heart, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/useCart";
 
 interface Product {
   id: string;
@@ -27,6 +28,16 @@ export default function Bracelets() {
   const [sortBy, setSortBy] = useState("name");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [user, setUser] = useState<any>(null);
+  const { addToCart } = useCart(user);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
 
   useEffect(() => {
     fetchProducts();
@@ -68,56 +79,13 @@ export default function Bracelets() {
     }
   };
 
-  const addToCart = async (productId: string) => {
+  const handleAddToCart = async (productId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Login necessário",
-          description: "Faça login para adicionar produtos ao carrinho",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data: existingItem } = await supabase
-        .from('cart_items')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('product_id', productId)
-        .single();
-
-      if (existingItem) {
-        const { error } = await supabase
-          .from('cart_items')
-          .update({ quantity: existingItem.quantity + 1 })
-          .eq('id', existingItem.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('cart_items')
-          .insert({
-            user_id: user.id,
-            product_id: productId,
-            quantity: 1
-          });
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: "Produto adicionado",
-        description: "A pulseira foi adicionada ao carrinho",
-      });
+      await addToCart(productId, 1);
+      toast({ title: "Produto adicionado", description: "A pulseira foi adicionada ao carrinho" });
     } catch (error) {
       console.error('Erro ao adicionar ao carrinho:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível adicionar a pulseira ao carrinho",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "Não foi possível adicionar a pulseira ao carrinho", variant: "destructive" });
     }
   };
 
@@ -217,7 +185,7 @@ export default function Bracelets() {
                       <Button 
                         variant="secondary" 
                         size="sm"
-                        onClick={() => addToCart(product.id)}
+                        onClick={() => handleAddToCart(product.id)}
                       >
                         <ShoppingCart className="h-4 w-4" />
                       </Button>
