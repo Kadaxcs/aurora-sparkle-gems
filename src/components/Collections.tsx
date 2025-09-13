@@ -4,8 +4,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import earringsImg from "@/assets/earrings-collection.jpg";
 import necklaceImg from "@/assets/necklace-collection.jpg";
 import braceletsImg from "@/assets/bracelets-collection.jpg";
+import ringImg from "@/assets/hero-ring.jpg";
 
 const collections = [
+  {
+    id: 0,
+    title: "Anéis",
+    subtitle: "Sofisticação em cada detalhe",
+    image: ringImg,
+    items: "60+ peças",
+    path: "/aneis",
+  },
   {
     id: 1,
     title: "Brincos",

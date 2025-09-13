@@ -46,6 +46,14 @@ interface Product {
   available_sizes?: any;
 }
 
+interface RelatedProduct {
+  id: string;
+  name: string;
+  price: number;
+  sale_price?: number;
+  images: any;
+}
+
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<Product | null>(null);
@@ -55,6 +63,8 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [relatedProducts, setRelatedProducts] = useState<RelatedProduct[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -154,6 +164,36 @@ export default function ProductDetail() {
       setAddingToCart(false);
     }
   };
+
+  // Buscar produtos relacionados com base no tipo no nome ou aleatoriamente
+  useEffect(() => {
+    const fetchRelated = async () => {
+      if (!product) return;
+      setLoadingRelated(true);
+      try {
+        let query = supabase
+          .from('products')
+          .select('id, name, price, sale_price, images')
+          .eq('is_active', true)
+          .neq('id', product.id)
+          .limit(8);
+
+        const name = product.name.toLowerCase();
+        if (name.includes('anel')) query = query.ilike('name', '%anel%');
+        else if (name.includes('brinc')) query = query.ilike('name', '%brinc%');
+        else if (name.includes('colar')) query = query.ilike('name', '%colar%');
+        else if (name.includes('pulseir')) query = query.ilike('name', '%pulseir%');
+
+        const { data } = await query;
+        setRelatedProducts(data || []);
+      } catch (e) {
+        console.error('Erro ao buscar relacionados:', e);
+      } finally {
+        setLoadingRelated(false);
+      }
+    };
+    fetchRelated();
+  }, [product]);
 
   if (loading) {
     return (
@@ -493,6 +533,48 @@ export default function ProductDetail() {
             </Card>
           )}
         </div>
+
+        {/* Produtos Relacionados */}
+        <Separator className="my-12" />
+        <div className="text-center">
+          <h2 className="text-2xl font-serif font-bold mb-8">Você também pode gostar</h2>
+        </div>
+        {loadingRelated ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : relatedProducts.length === 0 ? (
+          <div className="text-center text-muted-foreground py-8">
+            Sem recomendações no momento
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {relatedProducts.map((p) => {
+              const images = Array.isArray(p.images) ? p.images : [];
+              const img = images[0];
+              const price = (p.sale_price || p.price) as number;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => navigate(`/produto/${p.id}`)}
+                  className="cursor-pointer group border rounded-lg overflow-hidden bg-card"
+                >
+                  <div className="aspect-square overflow-hidden">
+                    {img ? (
+                      <img src={img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    ) : (
+                      <div className="w-full h-full bg-muted" />
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <div className="font-medium line-clamp-2 mb-1">{p.name}</div>
+                    <div className="text-primary font-semibold">R$ {price.toFixed(2)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

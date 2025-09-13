@@ -184,7 +184,6 @@ export default function Checkout() {
         order_number: orderNumber,
         subtotal: getSubtotal(),
         shipping_cost: getShippingCost(),
-        shipping_days: freightDays,
         total: getTotal(),
         payment_method: checkoutData.paymentMethod,
         shipping_address: {
@@ -271,9 +270,9 @@ export default function Checkout() {
           },
         },
         back_urls: {
-          success: `${window.location.origin}/pedido-confirmado?order=${order.id}`,
+          success: `${window.location.origin}/pedido-confirmado/${order.id}`,
           failure: `${window.location.origin}/checkout?error=payment_failed`,
-          pending: `${window.location.origin}/pedido-confirmado?order=${order.id}&status=pending`,
+          pending: `${window.location.origin}/pedido-confirmado/${order.id}?status=pending`,
         },
         auto_return: "approved",
         payment_methods: {

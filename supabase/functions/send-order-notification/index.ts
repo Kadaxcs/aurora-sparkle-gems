@@ -19,8 +19,29 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
   try {
-    const { orderId, adminEmail = "kadaxyz1@gmail.com" }: OrderNotificationRequest = await req.json();
+    let body: OrderNotificationRequest | null = null;
+    try {
+      body = await req.json();
+    } catch (_) {
+      body = null;
+    }
+
+    if (!body || !body.orderId) {
+      return new Response(JSON.stringify({ error: "Invalid or missing JSON body" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const { orderId, adminEmail = "kadaxyz1@gmail.com" } = body;
 
     console.log(`Processing order notification for order: ${orderId}`);
 
