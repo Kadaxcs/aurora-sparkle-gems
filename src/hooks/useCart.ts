@@ -196,9 +196,17 @@ export function useCart(user: any) {
   };
 
   const addToCart = async (productId: string, quantity: number = 1, size?: string) => {
-    console.log('🛒 Adding to cart:', productId, 'qty:', quantity, 'size:', size, 'user:', user?.id ? 'authenticated' : 'guest');
     try {
-      if (user?.id) {
+      // Ensure we use the latest auth state to avoid race conditions between pages
+      let effectiveUserId = user?.id as string | undefined;
+      if (!effectiveUserId) {
+        const { data } = await supabase.auth.getUser();
+        effectiveUserId = data.user?.id;
+      }
+
+      console.log('🛒 Adding to cart:', { productId, quantity, size, effectiveUserId });
+
+      if (effectiveUserId) {
         await addToAuthenticatedCart(productId, quantity, size);
       } else {
         await addToLocalCart(productId, quantity, size);
@@ -213,7 +221,7 @@ export function useCart(user: any) {
       // Failover: se houver erro de RLS ou qualquer erro de permissão, usar carrinho local
       const isRlsError =
         error?.code === "42501" ||
-        typeof error?.message === "string" && error.message.toLowerCase().includes("row-level security");
+        (typeof error?.message === "string" && error.message.toLowerCase().includes("row-level security"));
 
       if (user?.id && isRlsError) {
         try {
