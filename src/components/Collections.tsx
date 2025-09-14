@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import earringsImg from "@/assets/earrings-collection.jpg";
@@ -42,6 +43,54 @@ const collections = [
 ];
 
 export const Collections = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Coordinate with FeaturedProducts loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800); // Small delay to coordinate appearance
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          {/* Header skeleton */}
+          <div className="text-center mb-16">
+            <div className="animate-pulse">
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-muted/50 border border-muted mb-6 w-64 h-10 mx-auto"></div>
+              <div className="h-12 bg-muted rounded w-96 mx-auto mb-4"></div>
+              <div className="h-4 bg-muted rounded w-2/3 mx-auto"></div>
+            </div>
+          </div>
+
+          {/* Collections Grid skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-card border-border/50 rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-muted"></div>
+                  <div className="p-6">
+                    <div className="h-8 bg-muted rounded mb-2"></div>
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA skeleton */}
+          <div className="text-center mt-16">
+            <div className="h-12 bg-muted rounded w-56 mx-auto"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">

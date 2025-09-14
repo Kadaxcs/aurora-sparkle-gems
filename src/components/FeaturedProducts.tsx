@@ -100,13 +100,51 @@ export function FeaturedProducts() {
 
   if (loading) {
     return (
-      <section className="py-16 bg-gradient-to-br from-background via-background/50 to-primary/5">
-        <div className="container mx-auto px-4">
+      <section className="py-16 bg-gradient-to-br from-background via-background/50 to-primary/5 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-10 left-10 w-20 h-20 bg-primary/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-10 right-10 w-32 h-32 bg-accent/10 rounded-full blur-xl"></div>
+        
+        <div className="container mx-auto px-4 relative">
           <div className="text-center mb-12">
             <div className="animate-pulse">
-              <div className="h-8 bg-muted rounded w-64 mx-auto mb-4"></div>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="h-6 w-6 bg-muted rounded"></div>
+                <div className="h-8 bg-muted rounded w-64"></div>
+                <div className="h-6 w-6 bg-muted rounded"></div>
+              </div>
               <div className="h-4 bg-muted rounded w-96 mx-auto"></div>
             </div>
+          </div>
+
+          {/* Product cards skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-card/80 backdrop-blur-sm rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-muted"></div>
+                  <div className="p-6">
+                    <div className="h-6 bg-muted rounded mb-2"></div>
+                    <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-2">
+                        <div className="h-6 bg-muted rounded w-20"></div>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <div key={star} className="h-3 w-3 bg-muted rounded"></div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="h-9 w-9 bg-muted rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <div className="h-10 bg-muted rounded w-48 mx-auto"></div>
           </div>
         </div>
       </section>
