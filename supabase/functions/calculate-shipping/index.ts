@@ -63,64 +63,75 @@ serve(async (req) => {
 
     // 2. Calcular frete baseado na região e distância com valores mais reais
     const calculateShippingOptions = (originState: string, destState: string, destRegion: string) => {
-      let basePriceSedex = 25.50; // Valor base Sedex
-      let baseDaysSedex = 5;
+      let basePriceSedex = 20.50; // Valor base Sedex
+      let baseDaysSedex = 4;
 
-      // Mesma cidade/região
-      if (originState === destState) {
-        if (destRegion === "13") { // Limeira e região
-          basePriceSedex = 15.50;
-          baseDaysSedex = 2;
-        } else {
-          basePriceSedex = 19.50; // Mesmo estado
-          baseDaysSedex = 3;
-        }
+      // São Paulo capital (região 01-05)
+      if (destState === 'SP' && ['01', '02', '03', '04', '05'].includes(destRegion)) {
+        basePriceSedex = 12.50; // Baseado na HubJoias para SP capital
+        baseDaysSedex = 3;
       }
-      // Estados próximos (Sudeste/Sul)
-      else if (['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS'].includes(destState)) {
-        if (['RJ', 'MG', 'ES'].includes(destState)) {
-          basePriceSedex = 28.50; // Sudeste próximo
-          baseDaysSedex = 4;
-        } else if (['RS'].includes(destState)) {
-          // Rio Grande do Sul - valor específico baseado no exemplo
-          basePriceSedex = 46.50; // Baseado no valor da HubJoias
-          baseDaysSedex = 8;
-        } else {
-          basePriceSedex = 35.80; // Sul geral
-          baseDaysSedex = 6;
-        }
+      // São Paulo interior (Limeira e região próxima)
+      else if (destState === 'SP' && destRegion === "13") { 
+        basePriceSedex = 15.50;
+        baseDaysSedex = 2;
+      }
+      // São Paulo - outras regiões
+      else if (destState === 'SP') {
+        basePriceSedex = 16.50;
+        baseDaysSedex = 3;
+      }
+      // Rio de Janeiro
+      else if (destState === 'RJ') {
+        basePriceSedex = 22.50;
+        baseDaysSedex = 4;
+      }
+      // Minas Gerais
+      else if (destState === 'MG') {
+        basePriceSedex = 24.50;
+        baseDaysSedex = 4;
+      }
+      // Espírito Santo
+      else if (destState === 'ES') {
+        basePriceSedex = 26.50;
+        baseDaysSedex = 5;
+      }
+      // Sul - Paraná e Santa Catarina
+      else if (['PR', 'SC'].includes(destState)) {
+        basePriceSedex = 28.80;
+        baseDaysSedex = 5;
+      }
+      // Rio Grande do Sul
+      else if (destState === 'RS') {
+        basePriceSedex = 35.50; // Valor mais realista para RS
+        baseDaysSedex = 6;
       }
       // Centro-Oeste
       else if (['GO', 'MT', 'MS', 'DF'].includes(destState)) {
-        basePriceSedex = 38.90;
-        baseDaysSedex = 7;
+        basePriceSedex = 32.90;
+        baseDaysSedex = 6;
       }
       // Nordeste
       else if (['BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA'].includes(destState)) {
-        basePriceSedex = 42.90;
-        baseDaysSedex = 9;
+        basePriceSedex = 38.90;
+        baseDaysSedex = 8;
       }
       // Norte
       else {
-        basePriceSedex = 48.90;
-        baseDaysSedex = 12;
+        basePriceSedex = 42.90;
+        baseDaysSedex = 10;
       }
 
       // Ajustar por peso (acima de 100g)
       if (weight > 0.1) {
         const extraWeight = weight - 0.1;
-        basePriceSedex += extraWeight * 7; // R$ 7 por 100g adicional (mais realista)
+        basePriceSedex += extraWeight * 5; // R$ 5 por 100g adicional
       }
 
-      // Margem de segurança de 10% para cobrir flutuações
-      basePriceSedex = Math.round(basePriceSedex * 1.1 * 100) / 100;
-
-      // Adicionar 48h conforme solicitado
-      baseDaysSedex += 2;
-
-      // Calcular PAC (30% mais barato, 3-5 dias a mais)
-      const basePricePac = Math.round(basePriceSedex * 0.7 * 100) / 100;
-      const baseDaysPac = baseDaysSedex + Math.min(5, Math.max(3, Math.round(baseDaysSedex * 0.3)));
+      // Calcular PAC baseado na referência da HubJoias
+      // PAC é cerca de 55% mais caro que Sedex (R$ 19,47 vs R$ 12,53)
+      const basePricePac = Math.round(basePriceSedex * 1.55 * 100) / 100;
+      const baseDaysPac = baseDaysSedex + 4; // PAC demora 4 dias a mais
 
       return [
         {
