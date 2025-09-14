@@ -78,22 +78,51 @@ export function HubJoiasManagement() {
 
   const fetchPendingOrders = async () => {
     try {
-      const { data, error } = await supabase
+      // First fetch orders
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select(`
           *,
           order_items (
             *,
             products (name, sku, images)
-          ),
-          profiles (first_name, last_name, phone)
+          )
         `)
         .eq('payment_status', 'paid')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setOrders((data as unknown as Order[]) || []);
+      if (ordersError) throw ordersError;
+
+      if (!ordersData || ordersData.length === 0) {
+        setOrders([]);
+        return;
+      }
+
+      // Get unique user IDs
+      const userIds = [...new Set(ordersData.map(order => order.user_id))];
+
+      // Fetch profiles for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name, phone')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles by user_id
+      const profilesMap = new Map();
+      profilesData?.forEach(profile => {
+        profilesMap.set(profile.user_id, profile);
+      });
+
+      // Combine orders with profiles
+      const ordersWithProfiles = ordersData.map(order => ({
+        ...order,
+        profiles: profilesMap.get(order.user_id) || null
+      }));
+
+      setOrders((ordersWithProfiles as unknown as Order[]) || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast({
