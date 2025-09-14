@@ -57,8 +57,17 @@ export function useCart(user: any) {
       } else {
         await loadLocalCart();
       }
-    } catch (error) {
-      console.error('Erro ao carregar carrinho:', error);
+    } catch (error: any) {
+      const isRlsError =
+        error?.code === '42501' ||
+        (typeof error?.message === 'string' && error.message.toLowerCase().includes('row-level security'));
+
+      if (isRlsError) {
+        // Fallback para carrinho local caso políticas RLS impeçam a leitura
+        await loadLocalCart();
+      } else {
+        console.error('Erro ao carregar carrinho:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -137,17 +146,33 @@ export function useCart(user: any) {
 
   const addToCart = async (productId: string, quantity: number = 1, size?: string) => {
     try {
-      if (user) {
+      if (user?.id) {
         await addToAuthenticatedCart(productId, quantity, size);
       } else {
         await addToLocalCart(productId, quantity, size);
       }
-      
+
       toast({
         title: "Produto adicionado",
         description: "O produto foi adicionado ao carrinho",
       });
-    } catch (error) {
+    } catch (error: any) {
+      // Failover: se houver erro de RLS ou qualquer erro de permissão, usar carrinho local
+      const isRlsError =
+        error?.code === "42501" ||
+        typeof error?.message === "string" && error.message.toLowerCase().includes("row-level security");
+
+      if (user?.id && isRlsError) {
+        try {
+          await addToLocalCart(productId, quantity, size);
+          toast({
+            title: "Carrinho local ativado",
+            description: "Não foi possível salvar na conta. Mantivemos no carrinho deste dispositivo.",
+          });
+          return;
+        } catch (_) {}
+      }
+
       console.error('Erro ao adicionar ao carrinho:', error);
       toast({
         title: "Erro",
