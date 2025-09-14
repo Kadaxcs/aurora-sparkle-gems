@@ -122,7 +122,7 @@ export function useCart(user: any) {
         quantity,
         created_at,
         updated_at,
-        products!inner (
+        products (
           name,
           price,
           sale_price,
@@ -431,7 +431,7 @@ export function useCart(user: any) {
   }, [user?.id, addToAuthenticatedCart, loadAuthenticatedCart, toast]);
 
   const getItemPrice = (item: CartItem) => {
-    return item.products.sale_price || item.products.price;
+    return item.products?.sale_price ?? item.products?.price ?? 0;
   };
 
   const getTotal = () => {
