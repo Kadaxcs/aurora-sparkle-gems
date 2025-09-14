@@ -244,9 +244,15 @@ export function useCart(user: any) {
   };
 
   const addToAuthenticatedCart = useCallback(async (productId: string, quantity: number, size?: string) => {
-    if (!user?.id) return;
+    // Always resolve the latest authenticated user to avoid stale closures
+    let uid = user?.id as string | undefined;
+    if (!uid) {
+      const { data } = await supabase.auth.getUser();
+      uid = data.user?.id;
+    }
+    if (!uid) return;
     
-    // Optimistic update - add to state immediately
+    // Optimistic update - add to state immediately (visual feedback)
     const tempItem: CartItem = {
       id: `temp-${Date.now()}`,
       product_id: productId,
@@ -262,7 +268,7 @@ export function useCart(user: any) {
       const { data: existingItem } = await supabase
         .from('cart_items')
         .select('id, quantity')
-        .eq('user_id', user.id)
+        .eq('user_id', uid)
         .eq('product_id', productId)
         .maybeSingle();
 
@@ -275,28 +281,27 @@ export function useCart(user: any) {
 
         if (error) throw error;
       } else {
-        // Insert new item
+        // Insert new item (no size column in DB)
         const { error } = await supabase
           .from('cart_items')
           .insert({
-            user_id: user.id,
+            user_id: uid,
             product_id: productId,
-            quantity,
-            size
+            quantity
           });
 
         if (error) throw error;
       }
 
-      // Reload cart to get actual data
-      setTimeout(() => loadAuthenticatedCart(), 100);
+      // Reload cart to get actual data and notify others
+      await loadAuthenticatedCart();
       notifyCartUpdated();
     } catch (error) {
       // Remove optimistic update on error
       setCartItems(prev => prev.filter(item => item.id !== tempItem.id));
       throw error;
     }
-  }, [user?.id, loadAuthenticatedCart]);
+  }, [loadAuthenticatedCart]);
 
   const addToLocalCart = async (productId: string, quantity: number, size?: string) => {
     const localItems = getLocalCartItems();
