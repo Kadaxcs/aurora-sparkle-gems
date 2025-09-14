@@ -21,8 +21,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
 
 const menuItems = [
@@ -46,30 +44,25 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
-  const { open, setOpen } = useSidebar();
-  
   return (
-    <Sidebar className="w-64 lg:w-64" collapsible="icon">
-      {/* Mobile trigger inside sidebar */}
-      <SidebarTrigger className="lg:hidden m-2 self-start" />
-      
-      <SidebarContent>
+    <Sidebar className="w-64" collapsible="offcanvas">
+      <SidebarContent className="bg-background">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-lg font-serif text-primary">
+          <SidebarGroupLabel className="text-lg font-serif text-primary px-4 py-6">
             Painel Admin
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     onClick={() => onSectionChange(item.id)}
                     isActive={activeSection === item.id}
-                    className="w-full justify-start"
+                    className="w-full justify-start h-12 px-4 rounded-lg transition-colors data-[active=true]:bg-primary data-[active=true]:text-primary-foreground hover:bg-secondary"
                     title={item.label}
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
+                    <item.icon className="h-5 w-5 mr-3" />
+                    <span className="font-medium">{item.label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
