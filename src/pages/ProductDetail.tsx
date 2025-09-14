@@ -123,13 +123,6 @@ export default function ProductDetail() {
       });
       return;
     }
-      toast({
-        title: "Tamanho necessário",
-        description: "Selecione um tamanho antes de adicionar ao carrinho",
-        variant: "destructive",
-      });
-      return;
-    }
 
     setAddingToCart(true);
     try {
