@@ -62,76 +62,89 @@ serve(async (req) => {
     }
 
     // 2. Calcular frete baseado na região e distância com valores mais reais
-    const calculateShippingCost = (originState: string, destState: string, destRegion: string) => {
-      let basePrice = 25.50; // Valor base aumentado
-      let baseDays = 5;
+    const calculateShippingOptions = (originState: string, destState: string, destRegion: string) => {
+      let basePriceSedex = 25.50; // Valor base Sedex
+      let baseDaysSedex = 5;
 
       // Mesma cidade/região
       if (originState === destState) {
         if (destRegion === "13") { // Limeira e região
-          basePrice = 15.50;
-          baseDays = 2;
+          basePriceSedex = 15.50;
+          baseDaysSedex = 2;
         } else {
-          basePrice = 19.50; // Mesmo estado
-          baseDays = 3;
+          basePriceSedex = 19.50; // Mesmo estado
+          baseDaysSedex = 3;
         }
       }
       // Estados próximos (Sudeste/Sul)
       else if (['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS'].includes(destState)) {
         if (['RJ', 'MG', 'ES'].includes(destState)) {
-          basePrice = 28.50; // Sudeste próximo
-          baseDays = 4;
+          basePriceSedex = 28.50; // Sudeste próximo
+          baseDaysSedex = 4;
         } else if (['RS'].includes(destState)) {
           // Rio Grande do Sul - valor específico baseado no exemplo
-          basePrice = 46.50; // Baseado no valor da HubJoias
-          baseDays = 8;
+          basePriceSedex = 46.50; // Baseado no valor da HubJoias
+          baseDaysSedex = 8;
         } else {
-          basePrice = 35.80; // Sul geral
-          baseDays = 6;
+          basePriceSedex = 35.80; // Sul geral
+          baseDaysSedex = 6;
         }
       }
       // Centro-Oeste
       else if (['GO', 'MT', 'MS', 'DF'].includes(destState)) {
-        basePrice = 38.90;
-        baseDays = 7;
+        basePriceSedex = 38.90;
+        baseDaysSedex = 7;
       }
       // Nordeste
       else if (['BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA'].includes(destState)) {
-        basePrice = 42.90;
-        baseDays = 9;
+        basePriceSedex = 42.90;
+        baseDaysSedex = 9;
       }
       // Norte
       else {
-        basePrice = 48.90;
-        baseDays = 12;
+        basePriceSedex = 48.90;
+        baseDaysSedex = 12;
       }
 
       // Ajustar por peso (acima de 100g)
       if (weight > 0.1) {
         const extraWeight = weight - 0.1;
-        basePrice += extraWeight * 7; // R$ 7 por 100g adicional (mais realista)
+        basePriceSedex += extraWeight * 7; // R$ 7 por 100g adicional (mais realista)
       }
 
       // Margem de segurança de 10% para cobrir flutuações
-      basePrice = Math.round(basePrice * 1.1 * 100) / 100;
+      basePriceSedex = Math.round(basePriceSedex * 1.1 * 100) / 100;
 
       // Adicionar 48h conforme solicitado
-      baseDays += 2;
+      baseDaysSedex += 2;
 
-      return { price: basePrice, days: baseDays };
+      // Calcular PAC (30% mais barato, 3-5 dias a mais)
+      const basePricePac = Math.round(basePriceSedex * 0.7 * 100) / 100;
+      const baseDaysPac = baseDaysSedex + Math.min(5, Math.max(3, Math.round(baseDaysSedex * 0.3)));
+
+      return [
+        {
+          service: 'PAC',
+          price: basePricePac,
+          days: baseDaysPac
+        },
+        {
+          service: 'Sedex',
+          price: basePriceSedex,
+          days: baseDaysSedex
+        }
+      ];
     };
 
-    const result = calculateShippingCost("SP", cepData.uf, cleanDestCep.substring(0, 2));
+    const options = calculateShippingOptions("SP", cepData.uf, cleanDestCep.substring(0, 2));
 
-    console.log('Resultado do cálculo:', result);
+    console.log('Opções de frete calculadas:', options);
 
     return new Response(
       JSON.stringify({
         success: true,
         data: {
-          price: result.price,
-          days: result.days,
-          service: 'Sedex',
+          options: options,
           destination: {
             city: cepData.localidade,
             state: cepData.uf,

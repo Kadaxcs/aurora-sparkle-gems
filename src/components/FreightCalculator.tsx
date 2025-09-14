@@ -7,15 +7,22 @@ import { Truck, Clock, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-interface FreightResult {
+interface ShippingOption {
+  service: string;
   price: number;
   days: number;
+}
+
+interface FreightResult {
+  options?: ShippingOption[];
+  price?: number;
+  days?: number;
   error?: string;
 }
 
 interface FreightCalculatorProps {
   subtotal: number;
-  onFreightCalculated: (freight: FreightResult | null) => void;
+  onFreightCalculated: (freight: { cost: number; days: number; service: string } | null) => void;
   initialCep?: string;
 }
 
@@ -27,6 +34,7 @@ export const FreightCalculator: React.FC<FreightCalculatorProps> = ({
   const [cep, setCep] = useState(initialCep);
   const [isCalculating, setIsCalculating] = useState(false);
   const [freightResult, setFreightResult] = useState<FreightResult | null>(null);
+  const [selectedOption, setSelectedOption] = useState<ShippingOption | null>(null);
   const { toast } = useToast();
 
   const formatCep = (value: string) => {
@@ -71,18 +79,27 @@ export const FreightCalculator: React.FC<FreightCalculatorProps> = ({
 
       if (error) throw error;
 
-      if (data?.success) {
+      if (data?.success && data.data?.options) {
         const freightData: FreightResult = {
-          price: data.data.price,
-          days: data.data.days
+          options: data.data.options
         };
 
         setFreightResult(freightData);
-        onFreightCalculated(freightData);
+        
+        // Selecionar automaticamente a opção mais barata (PAC)
+        const cheapestOption = data.data.options.reduce((prev: ShippingOption, current: ShippingOption) => 
+          prev.price < current.price ? prev : current
+        );
+        setSelectedOption(cheapestOption);
+        onFreightCalculated({ 
+          cost: cheapestOption.price, 
+          days: cheapestOption.days,
+          service: cheapestOption.service
+        });
 
         toast({
-          title: "Frete calculado",
-          description: `R$ ${data.data.price.toFixed(2)} - ${data.data.days} dias úteis`,
+          title: "Opções de frete calculadas!",
+          description: `${data.data.options.length} opções disponíveis`,
         });
       } else {
         throw new Error(data?.error || 'Erro ao calcular frete');
@@ -154,19 +171,48 @@ export const FreightCalculator: React.FC<FreightCalculatorProps> = ({
               </div>
             </div>
 
-            {freightResult && !freightResult.error && (
-              <div className="p-3 bg-secondary rounded-lg space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Sedex:</span>
-                  <span className="font-bold text-primary">
-                    R$ {freightResult.price.toFixed(2)}
-                  </span>
+            {freightResult && !freightResult.error && freightResult.options && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-muted-foreground">Opções de frete:</p>
+                <div className="space-y-2">
+                  {freightResult.options.map((option, index) => (
+                    <div 
+                      key={index}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedOption?.service === option.service 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => {
+                        setSelectedOption(option);
+                        onFreightCalculated({ 
+                          cost: option.price, 
+                          days: option.days,
+                          service: option.service
+                        });
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{option.service}</span>
+                            {option.service === 'PAC' && (
+                              <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 px-2 py-0.5 rounded">
+                                Mais econômico
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span>{option.days} dias úteis</span>
+                          </div>
+                        </div>
+                        <span className="font-bold text-primary">R$ {option.price.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>Entrega em até {freightResult.days} dias úteis</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground text-center pt-2 border-t">
                   Origem: Limeira-SP | Dimensões: 18x12x6cm | Peso: 100g
                 </div>
               </div>
