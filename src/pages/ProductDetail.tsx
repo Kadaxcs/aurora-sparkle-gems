@@ -206,11 +206,20 @@ export default function ProductDetail() {
           {(() => {
             const name = product.name.toLowerCase();
             let cat = { label: 'Produtos', path: '/products' };
-            if (name.includes('anel')) cat = { label: 'Anéis', path: '/aneis' };
-            else if (name.includes('brinc')) cat = { label: 'Brincos', path: '/brincos' };
-            else if (name.includes('colar')) cat = { label: 'Colares', path: '/colares' };
-            else if (name.includes('pulseir')) cat = { label: 'Pulseiras', path: '/pulseiras' };
-            else if (name.includes('conjunto')) cat = { label: 'Conjuntos', path: '/conjuntos' };
+            
+            // Verificação mais específica para anéis
+            if (name.includes('anel') || name.includes('anéis') || name.includes('aliança')) {
+              cat = { label: 'Anéis', path: '/aneis' };
+            } else if (name.includes('brinc')) {
+              cat = { label: 'Brincos', path: '/brincos' };
+            } else if (name.includes('colar')) {
+              cat = { label: 'Colares', path: '/colares' };
+            } else if (name.includes('pulseir')) {
+              cat = { label: 'Pulseiras', path: '/pulseiras' };
+            } else if (name.includes('conjunto')) {
+              cat = { label: 'Conjuntos', path: '/conjuntos' };
+            }
+            
             return (
               <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-8">
                 <button onClick={() => navigate("/")} className="hover:text-primary">
