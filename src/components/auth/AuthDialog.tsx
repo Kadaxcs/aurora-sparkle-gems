@@ -29,7 +29,8 @@ export function AuthDialog({ open, onOpenChange, title = "Minha Conta", descript
     password: "",
     firstName: "",
     lastName: "",
-    phone: ""
+    phone: "",
+    cpf: ""
   });
   const { toast } = useToast();
 
@@ -48,7 +49,8 @@ export function AuthDialog({ open, onOpenChange, title = "Minha Conta", descript
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
-            phone: formData.phone
+            phone: formData.phone,
+            cpf: formData.cpf
           }
         }
       });
@@ -187,6 +189,17 @@ export function AuthDialog({ open, onOpenChange, title = "Minha Conta", descript
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF</Label>
+                <Input
+                  id="cpf"
+                  type="text"
+                  placeholder="000.000.000-00"
+                  value={formData.cpf}
+                  onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
                   required
                 />
               </div>

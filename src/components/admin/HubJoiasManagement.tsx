@@ -184,28 +184,22 @@ export function HubJoiasManagement() {
     }
   };
 
-  const simulateHubJoiasSubmission = async (order: Order) => {
-    setSubmitting(true);
+  const markAsProcessing = async (order: Order) => {
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      await handleOrderStatusUpdate(order.id, 'sent');
+      await handleOrderStatusUpdate(order.id, 'processing');
       
       toast({
-        title: "Pedido Enviado",
-        description: `Pedido ${order.order_number} enviado para HubJoias`,
+        title: "Status Atualizado",
+        description: `Pedido ${order.order_number} marcado como em processamento`,
       });
       
       setSelectedOrder(null);
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao enviar pedido para HubJoias",
+        description: "Erro ao atualizar status do pedido",
         variant: "destructive",
       });
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -393,16 +387,11 @@ export function HubJoiasManagement() {
                 {/* Ações */}
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => simulateHubJoiasSubmission(selectedOrder)}
-                    disabled={submitting}
+                    onClick={() => markAsProcessing(selectedOrder)}
                     className="flex-1"
                   >
-                    {submitting ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    ) : (
-                      <Send className="h-4 w-4 mr-2" />
-                    )}
-                    {submitting ? 'Enviando...' : 'Enviar para HubJoias'}
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Marcar como Processando
                   </Button>
                 </div>
               </CardContent>
