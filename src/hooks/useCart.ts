@@ -368,25 +368,40 @@ export function useCart(user: any) {
   };
 
   // Migrate local cart to user cart when user logs in
-  const migrateLocalCartToUser = async () => {
-    if (!user) return;
+  const migrateLocalCartToUser = useCallback(async () => {
+    if (!user?.id) return;
 
     const localItems = getLocalCartItems();
     if (localItems.length === 0) return;
 
     try {
+      // Add each local item to authenticated cart
       for (const localItem of localItems) {
         await addToAuthenticatedCart(localItem.product_id, localItem.quantity, localItem.size);
       }
       
-      // Clear local storage after migration
+      // Clear local storage after successful migration
       localStorage.removeItem('cart_items');
-      await loadAuthenticatedCart();
-      notifyCartUpdated();
+      
+      // Reload cart to show updated items
+      setTimeout(() => {
+        loadAuthenticatedCart();
+        notifyCartUpdated();
+      }, 100);
+      
+      toast({
+        title: "Carrinho sincronizado",
+        description: "Seus itens foram transferidos para sua conta",
+      });
     } catch (error) {
       console.error('Erro ao migrar carrinho local:', error);
+      toast({
+        title: "Aviso",
+        description: "Alguns itens podem não ter sido transferidos corretamente",
+        variant: "destructive",
+      });
     }
-  };
+  }, [user?.id, addToAuthenticatedCart, loadAuthenticatedCart, toast]);
 
   const getItemPrice = (item: CartItem) => {
     return item.products.sale_price || item.products.price;

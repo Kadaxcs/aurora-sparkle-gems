@@ -25,12 +25,17 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
     migrateLocalCartToUser
   } = useCart(user);
 
-  // Migrate local cart when user logs in
+  // Migrate local cart when user logs in - with improved timing
   useEffect(() => {
-    if (user) {
-      migrateLocalCartToUser();
+    if (user?.id && cartItems.length === 0) {
+      // Small delay to ensure user state is stable
+      const timer = setTimeout(() => {
+        migrateLocalCartToUser();
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, [user?.id, migrateLocalCartToUser]);
 
   // Refresh cart when sidebar opens (ensures guest cart sync)
   useEffect(() => {

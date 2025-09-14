@@ -22,7 +22,8 @@ import {
   Plus,
   Truck,
   Shield,
-  CreditCard
+  CreditCard,
+  Package
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -449,20 +450,20 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Detalhes do Produto */}
+        {/* Apenas Especificações Técnicas - removidas seções desnecessárias */}
         <div className="space-y-8">
           <Separator />
           
           <div className="text-center">
             <h2 className="text-2xl font-serif font-bold mb-8 tracking-wider">
-              D E T A L H E S
+              E S P E C I F I C A Ç Õ E S
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="max-w-2xl mx-auto">
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-medium mb-4">Especificações Técnicas</h3>
+                <h3 className="font-medium mb-4">Informações Técnicas</h3>
                 <div className="space-y-3 text-sm">
                   {product.weight && (
                     <div className="flex justify-between">
@@ -471,114 +472,94 @@ export default function ProductDetail() {
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span>Espessura:</span>
-                    <span className="font-medium">0,4cm</span>
+                    <span>Material:</span>
+                    <span className="font-medium">{product.material || "Liga de metal nobre"}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Banho:</span>
-                    <span className="font-medium">10 Camadas de Ouro Branco (ródio)</span>
+                    <span>Acabamento:</span>
+                    <span className="font-medium">Banho de ouro/ródio</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Pedra:</span>
-                    <span className="font-medium">Zircônia</span>
+                    <span>Garantia:</span>
+                    <span className="font-medium">6 meses</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Tecnologia:</span>
-                    <span className="font-medium">Antialérgica</span>
-                  </div>
-                  {product.material && (
+                  {product.sku && (
                     <div className="flex justify-between">
-                      <span>Material:</span>
-                      <span className="font-medium">{product.material}</span>
+                      <span>SKU:</span>
+                      <span className="font-medium">{product.sku}</span>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-medium mb-4 flex items-center">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Garantias e Qualidade
-                </h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span>Ouro:</span>
-                    <span className="font-medium">10 milésimos de ouro</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Garantia:</span>
-                    <span className="font-medium">2 anos</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Qualidade:</span>
-                    <span className="font-medium">Certificado Hub Joias</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Manutenção:</span>
-                    <span className="font-medium">Limpeza gratuita</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Resistência:</span>
-                    <span className="font-medium">Antialérgica</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
+          {/* Descrição se existir */}
           {product.description && (
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-medium mb-4">Descrição</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {product.description}
-                </p>
-              </CardContent>
-            </Card>
+            <div className="max-w-4xl mx-auto">
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-medium mb-4">Sobre este Produto</h3>
+                  <div 
+                    className="prose prose-sm max-w-none text-muted-foreground"
+                    dangerouslySetInnerHTML={{ __html: product.description }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
           )}
         </div>
 
         {/* Produtos Relacionados */}
-        <Separator className="my-12" />
-        <div className="text-center">
-          <h2 className="text-2xl font-serif font-bold mb-8">Você também pode gostar</h2>
-        </div>
-        {loadingRelated ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : relatedProducts.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            Sem recomendações no momento
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((p) => {
-              const images = Array.isArray(p.images) ? p.images : [];
-              const img = images[0];
-              const price = (p.sale_price || p.price) as number;
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => navigate(`/produto/${p.id}`)}
-                  className="cursor-pointer group border rounded-lg overflow-hidden bg-card"
+        {relatedProducts.length > 0 && (
+          <div className="space-y-8 mt-12">
+            <Separator />
+            
+            <div className="text-center">
+              <h2 className="text-2xl font-serif font-bold mb-8 tracking-wider">
+                P R O D U T O S   S I M I L A R E S
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedProducts.slice(0, 4).map((relatedProduct) => (
+                <Card 
+                  key={relatedProduct.id}
+                  className="group hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/produto/${relatedProduct.id}`)}
                 >
-                  <div className="aspect-square overflow-hidden">
-                    {img ? (
-                      <img src={img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <div className="aspect-square bg-muted relative overflow-hidden">
+                    {relatedProduct.images && relatedProduct.images.length > 0 ? (
+                      <img
+                        src={relatedProduct.images[0]}
+                        alt={relatedProduct.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        loading="lazy"
+                      />
                     ) : (
-                      <div className="w-full h-full bg-muted" />
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <Package className="h-12 w-12" />
+                      </div>
                     )}
                   </div>
-                  <div className="p-4">
-                    <div className="font-medium line-clamp-2 mb-1">{p.name}</div>
-                    <div className="text-primary font-semibold">R$ {price.toFixed(2)}</div>
-                  </div>
-                </div>
-              );
-            })}
+                  <CardContent className="p-4">
+                    <h3 className="font-medium text-sm line-clamp-2 mb-2">
+                      {relatedProduct.name}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-primary">
+                        R$ {(relatedProduct.sale_price || relatedProduct.price).toFixed(2)}
+                      </span>
+                      {relatedProduct.sale_price && (
+                        <span className="text-xs text-muted-foreground line-through">
+                          R$ {relatedProduct.price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>
