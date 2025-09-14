@@ -11,6 +11,7 @@ import { EmailNotificationPanel } from "@/components/admin/EmailNotificationPane
 import MercadoPagoWebhookPanel from "@/components/admin/MercadoPagoWebhookPanel";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminPages } from "@/components/admin/AdminPages";
+import { HubJoiasManagement } from "@/components/admin/HubJoiasManagement";
 
 import { AdminProtectedRoute } from "@/components/auth/AdminProtectedRoute";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -22,6 +23,8 @@ export default function Admin() {
     switch (activeSection) {
       case "dashboard":
         return <AdminDashboard />;
+      case "hubjoias":
+        return <HubJoiasManagement />;
       case "products":
         return <AdminProducts />;
       case "update":

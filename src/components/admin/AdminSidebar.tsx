@@ -9,7 +9,8 @@ import {
   FileText,
   RefreshCw,
   Mail,
-  Webhook
+  Webhook,
+  Settings
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,6 +25,7 @@ import {
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "hubjoias", label: "Gestão HubJoias", icon: Settings },
   { id: "products", label: "Produtos", icon: Package },
   { id: "update", label: "Atualizar Produtos", icon: RefreshCw },
   { id: "import", label: "Importar Produtos", icon: Upload },
