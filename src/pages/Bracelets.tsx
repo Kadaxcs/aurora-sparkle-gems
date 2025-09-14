@@ -185,7 +185,10 @@ export default function Bracelets() {
                       <Button 
                         variant="secondary" 
                         size="sm"
-                        onClick={() => handleAddToCart(product.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product.id);
+                        }}
                       >
                         <ShoppingCart className="h-4 w-4" />
                       </Button>
@@ -218,7 +221,10 @@ export default function Bracelets() {
                       <Button 
                         size="sm" 
                         className="bg-primary hover:bg-primary/90"
-                        onClick={() => addToCart(product.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(product.id);
+                        }}
                       >
                         Adicionar
                       </Button>

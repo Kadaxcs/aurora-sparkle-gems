@@ -317,7 +317,11 @@ export default function Products() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {products.map((product) => (
-              <Card key={product.id} className="group overflow-hidden hover:shadow-lg transition-shadow">
+              <Card 
+                key={product.id} 
+                className="group overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => navigate(`/produto/${product.id}`)}
+              >
                 <div className="relative aspect-square overflow-hidden">
                   <img
                     src={getImageUrl(product)}

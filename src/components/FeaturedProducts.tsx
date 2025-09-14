@@ -215,7 +215,8 @@ function FeaturedProducts() {
             return (
               <Card 
                 key={product.id} 
-                className="group hover:shadow-2xl transition-all duration-300 border-0 bg-card/80 backdrop-blur-sm overflow-hidden"
+                className="group hover:shadow-2xl transition-all duration-300 border-0 bg-card/80 backdrop-blur-sm overflow-hidden cursor-pointer"
+                onClick={() => navigate(`/produto/${product.id}`)}
               >
                 <CardContent className="p-0">
                   <div className="relative overflow-hidden">
