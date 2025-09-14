@@ -167,31 +167,73 @@ function calculateSedexPrice(originCep: string, destCep: string, weight: number)
   
   let basePrice = 25.00;
   
-  // Valores baseados na tabela real dos Correios 2024
+  // Valores baseados na tabela real dos Correios 2024 - Sedex (mais caro)
+  if (destState === 'SP') {
+    if (['01', '02', '03', '04', '05', '08'].includes(destRegion)) {
+      basePrice = 19.50; // SP Capital
+    } else if (destRegion === '13') {
+      basePrice = 12.50; // Limeira (mesmo estado, próximo)
+    } else {
+      basePrice = 16.50; // SP Interior
+    }
+  } else if (destState === 'RJ') {
+    basePrice = 28.50;
+  } else if (destState === 'MG') {
+    basePrice = 26.50;
+  } else if (destState === 'ES') {
+    basePrice = 30.50;
+  } else if (['PR', 'SC'].includes(destState)) {
+    basePrice = 32.80;
+  } else if (destState === 'RS') {
+    basePrice = 38.50;
+  } else if (['GO', 'MT', 'MS', 'DF'].includes(destState)) {
+    basePrice = 36.90;
+  } else if (['BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA'].includes(destState)) {
+    basePrice = 42.90;
+  } else {
+    basePrice = 48.90; // Norte
+  }
+  
+  // Adicional por peso
+  if (weight > 0.1) {
+    const extraWeight = Math.ceil((weight - 0.1) / 0.1);
+    basePrice += extraWeight * 4.50;
+  }
+  
+  return Math.round(basePrice * 100) / 100;
+}
+
+function calculatePacPrice(originCep: string, destCep: string, weight: number): number {
+  const destState = getStateFromCep(destCep);
+  const destRegion = destCep.substring(0, 2);
+  
+  let basePrice = 20.00;
+  
+  // Valores baseados na tabela real dos Correios 2024 - PAC (mais barato)
   if (destState === 'SP') {
     if (['01', '02', '03', '04', '05', '08'].includes(destRegion)) {
       basePrice = 12.50; // SP Capital
     } else if (destRegion === '13') {
       basePrice = 8.50; // Limeira (mesmo estado, próximo)
     } else {
-      basePrice = 15.50; // SP Interior
+      basePrice = 10.50; // SP Interior
     }
   } else if (destState === 'RJ') {
-    basePrice = 22.50;
+    basePrice = 18.50;
   } else if (destState === 'MG') {
-    basePrice = 24.50;
+    basePrice = 16.50;
   } else if (destState === 'ES') {
-    basePrice = 26.50;
+    basePrice = 20.50;
   } else if (['PR', 'SC'].includes(destState)) {
-    basePrice = 28.80;
+    basePrice = 22.80;
   } else if (destState === 'RS') {
-    basePrice = 35.50; // Baseado no exemplo mostrado
+    basePrice = 28.50;
   } else if (['GO', 'MT', 'MS', 'DF'].includes(destState)) {
-    basePrice = 32.90;
+    basePrice = 26.90;
   } else if (['BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA'].includes(destState)) {
-    basePrice = 38.90;
+    basePrice = 32.90;
   } else {
-    basePrice = 42.90; // Norte
+    basePrice = 38.90; // Norte
   }
   
   // Adicional por peso
@@ -203,58 +245,68 @@ function calculateSedexPrice(originCep: string, destCep: string, weight: number)
   return Math.round(basePrice * 100) / 100;
 }
 
-function calculatePacPrice(originCep: string, destCep: string, weight: number): number {
-  const sedexPrice = calculateSedexPrice(originCep, destCep, weight);
-  
-  // PAC é tipicamente 35-65% mais caro que Sedex
-  let multiplier = 1.55; // 55% mais caro (baseado no exemplo RS)
-  
-  const destState = getStateFromCep(destCep);
-  
-  // Ajustar multiplicador por região
-  if (destState === 'SP') {
-    multiplier = 1.45; // 45% mais caro em SP
-  } else if (['RJ', 'MG', 'ES'].includes(destState)) {
-    multiplier = 1.50; // 50% mais caro no Sudeste
-  } else if (['RS', 'PR', 'SC'].includes(destState)) {
-    multiplier = 1.55; // 55% mais caro no Sul
-  } else {
-    multiplier = 1.60; // 60% mais caro em outras regiões
-  }
-  
-  return Math.round(sedexPrice * multiplier * 100) / 100;
-}
-
 function calculateSedexDays(originCep: string, destCep: string): number {
   const destState = getStateFromCep(destCep);
   const destRegion = destCep.substring(0, 2);
   
+  let baseDays = 0;
+  
   if (destState === 'SP') {
     if (['01', '02', '03', '04', '05', '08'].includes(destRegion)) {
-      return 3; // SP Capital
+      baseDays = 3; // SP Capital
     } else if (destRegion === '13') {
-      return 1; // Limeira (mesmo estado, próximo)
+      baseDays = 1; // Limeira (mesmo estado, próximo)
     } else {
-      return 2; // SP Interior
+      baseDays = 2; // SP Interior
     }
   } else if (['RJ', 'MG', 'ES'].includes(destState)) {
-    return 4;
+    baseDays = 4;
   } else if (['PR', 'SC'].includes(destState)) {
-    return 5;
+    baseDays = 5;
   } else if (destState === 'RS') {
-    return 6;
+    baseDays = 6;
   } else if (['GO', 'MT', 'MS', 'DF'].includes(destState)) {
-    return 6;
+    baseDays = 6;
   } else if (['BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA'].includes(destState)) {
-    return 8;
+    baseDays = 8;
   } else {
-    return 10; // Norte
+    baseDays = 10; // Norte
   }
+  
+  // Adicionar 48 horas (2 dias) conforme solicitado
+  return baseDays + 2;
 }
 
 function calculatePacDays(originCep: string, destCep: string): number {
-  const sedexDays = calculateSedexDays(originCep, destCep);
-  return sedexDays + 4; // PAC sempre 4 dias a mais que Sedex
+  const destState = getStateFromCep(destCep);
+  const destRegion = destCep.substring(0, 2);
+  
+  let baseDays = 0;
+  
+  if (destState === 'SP') {
+    if (['01', '02', '03', '04', '05', '08'].includes(destRegion)) {
+      baseDays = 6; // SP Capital
+    } else if (destRegion === '13') {
+      baseDays = 3; // Limeira (mesmo estado, próximo)
+    } else {
+      baseDays = 4; // SP Interior
+    }
+  } else if (['RJ', 'MG', 'ES'].includes(destState)) {
+    baseDays = 8;
+  } else if (['PR', 'SC'].includes(destState)) {
+    baseDays = 10;
+  } else if (destState === 'RS') {
+    baseDays = 12;
+  } else if (['GO', 'MT', 'MS', 'DF'].includes(destState)) {
+    baseDays = 12;
+  } else if (['BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA'].includes(destState)) {
+    baseDays = 15;
+  } else {
+    baseDays = 18; // Norte
+  }
+  
+  // Adicionar 48 horas (2 dias) conforme solicitado
+  return baseDays + 2;
 }
 
 function getStateFromCep(cep: string): string {
