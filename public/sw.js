@@ -1,25 +1,48 @@
-// Aggressive caching service worker
-const CACHE_NAME = 'joias-cache-v1';
-const urlsToCache = [
-  '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json'
-];
+// Optimized service worker for Vite
+const CACHE_NAME = 'joias-cache-v2';
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
+  // Only cache GET requests and skip admin routes
+  if (event.request.method !== 'GET' || event.request.url.includes('/admin')) {
+    return;
+  }
+
+  // Cache static assets only
+  if (event.request.url.includes('.js') || 
+      event.request.url.includes('.css') || 
+      event.request.url.includes('.jpg') || 
+      event.request.url.includes('.png')) {
+    event.respondWith(
+      caches.match(event.request).then((response) => {
+        return response || fetch(event.request).then((response) => {
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        });
       })
-  );
+    );
+  }
 });

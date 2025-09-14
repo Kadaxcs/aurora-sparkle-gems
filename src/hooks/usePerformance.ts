@@ -3,29 +3,23 @@ import { useEffect } from 'react';
 // Preload critical resources
 export const usePreloadCriticalResources = () => {
   useEffect(() => {
-    // Preload critical images
+// Add preconnect to Supabase for faster API calls
+    const preconnectLink = document.createElement('link');
+    preconnectLink.rel = 'preconnect';
+    preconnectLink.href = 'https://vmhpmgiozhfzkzymvmaq.supabase.co';
+    document.head.appendChild(preconnectLink);
+
+    // Preload only actual image assets with correct paths
     const criticalImages = [
-      '/hero-ring.jpg',
-      '/necklace-collection.jpg',
-      '/earrings-collection.jpg',
-      '/bracelets-collection.jpg'
+      '/src/assets/hero-ring.jpg',
+      '/src/assets/necklace-collection.jpg',
+      '/src/assets/earrings-collection.jpg',
+      '/src/assets/bracelets-collection.jpg'
     ];
 
     criticalImages.forEach(src => {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'image';
-      link.href = src;
-      document.head.appendChild(link);
-    });
-
-    // Preload critical routes
-    const criticalRoutes = ['/products', '/aneis', '/colares'];
-    criticalRoutes.forEach(route => {
-      const link = document.createElement('link');
-      link.rel = 'prefetch';
-      link.href = route;
-      document.head.appendChild(link);
+      const img = new Image();
+      img.src = src;
     });
   }, []);
 };

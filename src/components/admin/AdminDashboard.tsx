@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -43,34 +43,28 @@ export function AdminDashboard() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchStats();
-    fetchRecentOrders();
-    fetchBestProducts();
+    // Fetch all data in parallel to reduce loading time
+    Promise.all([
+      fetchStats(),
+      fetchRecentOrders(), 
+      fetchBestProducts()
+    ]);
   }, []);
 
   const fetchStats = async () => {
     try {
-      // Buscar total de produtos
-      const { count: productsCount } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
-
-      // Buscar total de pedidos pagos (vendas efetivas)
-      const { count: ordersCount } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('payment_status', 'paid');
-
-      // Buscar total de usuários
-      const { count: usersCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-
-      // Buscar receita total
-      const { data: revenueData } = await supabase
-        .from('orders')
-        .select('total')
-        .eq('payment_status', 'paid');
+      // Execute all count queries in parallel
+      const [
+        { count: productsCount }, 
+        { count: ordersCount }, 
+        { count: usersCount },
+        { data: revenueData }
+      ] = await Promise.all([
+        supabase.from('products').select('*', { count: 'exact', head: true }),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('payment_status', 'paid'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('orders').select('total').eq('payment_status', 'paid')
+      ]);
 
       const totalRevenue = revenueData?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
 
@@ -173,7 +167,7 @@ export function AdminDashboard() {
     );
   };
 
-  const statCards = [
+  const statCards = useMemo(() => [
     {
       title: "Total de Produtos",
       value: stats.totalProducts,
@@ -181,7 +175,7 @@ export function AdminDashboard() {
       color: "text-blue-600"
     },
     {
-      title: "Vendas Realizadas",
+      title: "Vendas Realizadas", 
       value: stats.totalOrders,
       icon: ShoppingCart,
       color: "text-green-600"
@@ -198,7 +192,7 @@ export function AdminDashboard() {
       icon: DollarSign,
       color: "text-yellow-600"
     }
-  ];
+  ], [stats]);
 
   return (
     <div className="space-y-6">
