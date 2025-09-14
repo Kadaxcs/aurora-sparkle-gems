@@ -74,17 +74,6 @@ export default function Checkout() {
     notes: "",
   });
 
-  const [personalizationData, setPersonalizationData] = useState({
-    referenceImages: [] as File[],
-    engravingText: "",
-    preferredFinish: "",
-    ringSize: "",
-    deliveryUrgency: "normal",
-    specialInstructions: "",
-    landmark: "",
-    preferredTime: "",
-    authorizedReceiver: ""
-  });
 
   useEffect(() => {
     checkAuthAndLoadCart();
@@ -211,17 +200,6 @@ export default function Checkout() {
           neighborhood: checkoutData.neighborhood,
           city: checkoutData.city,
           state: checkoutData.state,
-        },
-        personalization_data: {
-          engravingText: personalizationData.engravingText,
-          preferredFinish: personalizationData.preferredFinish,
-          ringSize: personalizationData.ringSize,
-          deliveryUrgency: personalizationData.deliveryUrgency,
-          specialInstructions: personalizationData.specialInstructions,
-          landmark: personalizationData.landmark,
-          preferredTime: personalizationData.preferredTime,
-          authorizedReceiver: personalizationData.authorizedReceiver,
-          referenceImagesCount: personalizationData.referenceImages.length,
         },
         notes: checkoutData.notes || null,
       };
@@ -604,147 +582,6 @@ export default function Checkout() {
                 initialCep={checkoutData.zipCode}
               />
 
-              {/* Personalização e Dados da HubJoias */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personalização e Detalhes</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="referenceImages">Fotos de Referência</Label>
-                    <div className="mt-2">
-                      <Input
-                        id="referenceImages"
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          setPersonalizationData(prev => ({ ...prev, referenceImages: files }));
-                        }}
-                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold"
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Anexe fotos de referência para personalização (máx. 5 fotos)
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="engravingText">Texto para Gravação</Label>
-                      <Input
-                        id="engravingText"
-                        value={personalizationData.engravingText}
-                        onChange={(e) => setPersonalizationData(prev => ({ ...prev, engravingText: e.target.value }))}
-                        placeholder="Ex: Maria & João"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="ringSize">Tamanho do Anel</Label>
-                      <Select
-                        value={personalizationData.ringSize}
-                        onValueChange={(value) => setPersonalizationData(prev => ({ ...prev, ringSize: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tamanho" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 21 }, (_, i) => i + 10).map(size => (
-                            <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="preferredFinish">Acabamento Preferido</Label>
-                      <Select
-                        value={personalizationData.preferredFinish}
-                        onValueChange={(value) => setPersonalizationData(prev => ({ ...prev, preferredFinish: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o acabamento" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="polido">Polido</SelectItem>
-                          <SelectItem value="fosco">Fosco</SelectItem>
-                          <SelectItem value="escovado">Escovado</SelectItem>
-                          <SelectItem value="diamantado">Diamantado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="deliveryUrgency">Urgência da Entrega</Label>
-                      <Select
-                        value={personalizationData.deliveryUrgency}
-                        onValueChange={(value) => setPersonalizationData(prev => ({ ...prev, deliveryUrgency: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a urgência" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="normal">Normal (15-20 dias)</SelectItem>
-                          <SelectItem value="urgente">Urgente (7-10 dias)</SelectItem>
-                          <SelectItem value="super_urgente">Super Urgente (3-5 dias)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="specialInstructions">Instruções Especiais</Label>
-                    <Textarea
-                      id="specialInstructions"
-                      value={personalizationData.specialInstructions}
-                      onChange={(e) => setPersonalizationData(prev => ({ ...prev, specialInstructions: e.target.value }))}
-                      placeholder="Detalhes específicos sobre a personalização, material, etc."
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="landmark">Ponto de Referência</Label>
-                      <Input
-                        id="landmark"
-                        value={personalizationData.landmark}
-                        onChange={(e) => setPersonalizationData(prev => ({ ...prev, landmark: e.target.value }))}
-                        placeholder="Ex: próximo ao shopping, em frente à farmácia"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="preferredTime">Horário Preferido</Label>
-                      <Select
-                        value={personalizationData.preferredTime}
-                        onValueChange={(value) => setPersonalizationData(prev => ({ ...prev, preferredTime: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o horário" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="manha">Manhã (8h-12h)</SelectItem>
-                          <SelectItem value="tarde">Tarde (13h-17h)</SelectItem>
-                          <SelectItem value="noite">Noite (18h-20h)</SelectItem>
-                          <SelectItem value="qualquer">Qualquer horário</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="authorizedReceiver">Pessoa Autorizada para Receber</Label>
-                    <Input
-                      id="authorizedReceiver"
-                      value={personalizationData.authorizedReceiver}
-                      onChange={(e) => setPersonalizationData(prev => ({ ...prev, authorizedReceiver: e.target.value }))}
-                      placeholder="Nome de quem pode receber a encomenda (opcional)"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Forma de Pagamento */}
               <Card>
