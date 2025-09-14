@@ -113,10 +113,16 @@ export default function ProductDetail() {
   const handleAddToCart = async () => {
     if (!product) return;
 
-    // Only rings require size selection
-    const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis');
-    const requiresSize = isRing && product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0;
-    if (requiresSize && !selectedSize) {
+    // Rings always require size selection
+    const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis') || product.name.toLowerCase().includes('aliança');
+    if (isRing && !selectedSize) {
+      toast({
+        title: "Tamanho necessário",
+        description: "Selecione um tamanho antes de adicionar ao carrinho",
+        variant: "destructive",
+      });
+      return;
+    }
       toast({
         title: "Tamanho necessário",
         description: "Selecione um tamanho antes de adicionar ao carrinho",
@@ -319,30 +325,31 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Tamanho - apenas para anéis que possuem tamanhos disponíveis */}
             {(() => {
-              const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis');
-              return isRing && product.available_sizes && 
-                     Array.isArray(product.available_sizes) && 
-                     product.available_sizes.length > 0;
-            })() && (
-
-              <div className="space-y-3">
-                <label className="text-sm font-medium">Tamanho:</label>
-                <Select value={selectedSize} onValueChange={setSelectedSize}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Escolha um tamanho" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {product.available_sizes.map((size: any) => (
-                      <SelectItem key={size} value={size.toString()}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+              const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis') || product.name.toLowerCase().includes('aliança');
+              if (!isRing) return null;
+              const fallbackSizes = [14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35];
+              const sizes = (Array.isArray(product.available_sizes) && product.available_sizes.length > 0)
+                ? product.available_sizes
+                : fallbackSizes;
+              return (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Tamanho:</label>
+                  <Select value={selectedSize} onValueChange={setSelectedSize}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Escolha um tamanho" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sizes.map((size: any) => (
+                        <SelectItem key={size} value={size.toString()}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })()}
 
             {/* Quantidade */}
             <div className="space-y-3">
@@ -379,17 +386,13 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Botões de Ação */}
             <div className="space-y-3">
               <Button
                 onClick={handleAddToCart}
                 disabled={
                   addingToCart || 
                   product.stock_quantity === 0 || 
-                  (() => {
-                    const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis');
-                    return isRing && product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize;
-                  })()
+                  ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis') || product.name.toLowerCase().includes('aliança')) && !selectedSize)
                 }
                 className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
               >
@@ -397,10 +400,7 @@ export default function ProductDetail() {
                   "Adicionando..."
                 ) : product.stock_quantity === 0 ? (
                   "Fora de Estoque"
-                ) : (() => {
-                  const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis');
-                  return isRing && product.available_sizes && Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && !selectedSize;
-                })() ? (
+                ) : ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis') || product.name.toLowerCase().includes('aliança')) && !selectedSize) ? (
                   "Selecione um Tamanho"
                 ) : (
                   <>
@@ -414,7 +414,7 @@ export default function ProductDetail() {
                 onClick={() => navigate('/checkout')}
                 variant="default"
                 className="w-full h-12 text-lg bg-accent hover:bg-accent/90"
-                disabled={product.stock_quantity === 0}
+                disabled={product.stock_quantity === 0 || ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis') || product.name.toLowerCase().includes('aliança')) && !selectedSize)}
               >
                 Comprar Agora
               </Button>
