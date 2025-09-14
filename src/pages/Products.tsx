@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/useCart";
 import { useProductCache } from "@/hooks/useProductCache";
+import { SizeSelector } from "@/components/SizeSelector";
 
 interface Product {
   id: string;
@@ -205,9 +206,17 @@ export default function Products() {
     }
   };
 
-  const handleAddToCart = async (productId: string) => {
-    await addToCart(productId);
-  };
+  const handleAddToCart = useCallback((productId: string, productName: string) => {
+    const isRing = productName.toLowerCase().includes('anel') || 
+                   productName.toLowerCase().includes('anéis');
+    
+    if (isRing) {
+      // Para anéis, não fazer nada aqui - usar SizeSelector component
+      return;
+    } else {
+      addToCart(productId);
+    }
+  }, [addToCart]);
 
   const getPrice = (product: Product) => {
     return product.sale_price || product.price;
@@ -342,13 +351,30 @@ export default function Products() {
                     >
                       <Heart className="h-4 w-4" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      onClick={() => handleAddToCart(product.id)}
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                    </Button>
+                    {product.name.toLowerCase().includes('anel') ? (
+                      <SizeSelector
+                        productId={product.id}
+                        productName={product.name}
+                        availableSizes={[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]}
+                        onAddToCart={addToCart}
+                        trigger={
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                          >
+                            <ShoppingCart className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                    ) : (
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        onClick={() => handleAddToCart(product.id, product.name)}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 

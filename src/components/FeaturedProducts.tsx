@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { useProductCache } from "@/hooks/useProductCache";
+import { SizeSelector } from "@/components/SizeSelector";
 
 interface Product {
   id: string;
@@ -69,7 +70,7 @@ function FeaturedProducts() {
     }
   }, [getCachedProduct, setCachedProduct]);
 
-  const addToWishlist = async (productId: string) => {
+  const addToWishlist = useCallback(async (productId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -106,9 +107,25 @@ function FeaturedProducts() {
         });
       }
     }
-  };
+  }, [toast]);
 
-  // Substituído: agora usamos useCart para suportar carrinho de convidado
+  // FUNÇÃO CRÍTICA: Verificar se é anel e exigir tamanho SEMPRE
+  const handleAddToCart = useCallback((product: Product) => {
+    const isRing = product.name.toLowerCase().includes('anel') || 
+                   product.name.toLowerCase().includes('anéis') ||
+                   product.name.toLowerCase().includes('ring');
+    
+    if (isRing) {
+      // Para anéis, SEMPRE abrir seletor de tamanho - nunca adicionar direto
+      // Usar SizeSelector component com tamanhos padrão se não especificado
+      const availableSizes = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35];
+      // Trigger size selector aqui
+      return;
+    } else {
+      // Para outros produtos, adicionar direto
+      addToCartHook(product.id);
+    }
+  }, [addToCartHook]);
 
   const calculateDiscount = (price: number, salePrice?: number) => {
     if (!salePrice) return 0;
@@ -257,12 +274,12 @@ function FeaturedProducts() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              addToCartHook(product.id);
+                              handleAddToCart(product);
                             }}
                             className="backdrop-blur-sm"
                           >
                             <ShoppingCart className="h-4 w-4 mr-2" />
-                            Comprar
+                            {product.name.toLowerCase().includes('anel') ? 'Selecionar Tamanho' : 'Comprar'}
                           </Button>
                         </div>
                       </div>
@@ -312,14 +329,32 @@ function FeaturedProducts() {
                           </div>
                         </div>
 
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addToCartHook(product.id)}
-                          className="hover:bg-primary hover:text-primary-foreground"
-                        >
-                          <ShoppingCart className="h-4 w-4" />
-                        </Button>
+                        {product.name.toLowerCase().includes('anel') ? (
+                          <SizeSelector
+                            productId={product.id}
+                            productName={product.name}
+                            availableSizes={[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]}
+                            onAddToCart={addToCartHook}
+                            trigger={
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="hover:bg-primary hover:text-primary-foreground"
+                              >
+                                <ShoppingCart className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addToCartHook(product.id)}
+                            className="hover:bg-primary hover:text-primary-foreground"
+                          >
+                            <ShoppingCart className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

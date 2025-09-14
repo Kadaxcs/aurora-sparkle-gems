@@ -8,7 +8,7 @@ interface SizeSelectorProps {
   productId: string;
   productName: string;
   availableSizes: number[];
-  onAddToCart: (productId: string, selectedSize: number) => void;
+  onAddToCart: (productId: string, quantity: number, size?: string) => void;
   trigger?: React.ReactNode;
 }
 
@@ -24,7 +24,7 @@ export const SizeSelector = ({
 
   const handleAddToCart = () => {
     if (selectedSize) {
-      onAddToCart(productId, selectedSize);
+      onAddToCart(productId, 1, selectedSize.toString());
       setOpen(false);
       setSelectedSize(null);
     }
