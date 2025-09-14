@@ -30,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { SizeGuide } from "@/components/SizeGuide";
 import { useCart } from "@/hooks/useCart";
+import { useProductCache } from "@/hooks/useProductCache";
 
 interface Product {
   id: string;
@@ -86,15 +87,24 @@ export default function ProductDetail() {
 
   const fetchProduct = async () => {
     try {
+      const cacheKey = `product-${productId}`;
+      const cached = getCachedProduct(cacheKey);
+      if (cached) {
+        setProduct(cached);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('id,name,price,sale_price,description,short_description,sku,stock_quantity,weight,material,images,is_active,is_featured,dimensions,available_sizes')
         .eq('id', productId)
         .eq('is_active', true)
         .single();
 
       if (error) throw error;
       setProduct(data);
+      setCachedProduct(cacheKey, data);
     } catch (error) {
       console.error('Erro ao buscar produto:', error);
       toast({
@@ -109,6 +119,7 @@ export default function ProductDetail() {
   };
 
   const { addToCart } = useCart(user);
+  const { getCachedProduct, setCachedProduct } = useProductCache();
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -145,7 +156,7 @@ export default function ProductDetail() {
 
   // Buscar produtos relacionados com base no tipo no nome ou aleatoriamente
   useEffect(() => {
-    const fetchRelated = async () => {
+    const run = async () => {
       if (!product) return;
       setLoadingRelated(true);
       try {
@@ -154,7 +165,7 @@ export default function ProductDetail() {
           .select('id, name, price, sale_price, images')
           .eq('is_active', true)
           .neq('id', product.id)
-          .limit(8);
+          .limit(4);
 
         const name = product.name.toLowerCase();
         if (name.includes('anel')) query = query.ilike('name', '%anel%');
@@ -170,7 +181,12 @@ export default function ProductDetail() {
         setLoadingRelated(false);
       }
     };
-    fetchRelated();
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(run);
+    } else {
+      setTimeout(run, 300);
+    }
   }, [product]);
 
   if (loading) {
@@ -246,6 +262,9 @@ export default function ProductDetail() {
                     src={productImages[selectedImage]} 
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    decoding="async"
+                    loading="eager"
+                    fetchPriority="high"
                   />
                   <button className="absolute top-4 right-4 p-2 bg-white/80 rounded-full hover:bg-white">
                     <Share2 className="h-4 w-4" />
