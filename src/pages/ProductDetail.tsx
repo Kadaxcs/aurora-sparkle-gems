@@ -66,6 +66,7 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState("");
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [relatedProducts, setRelatedProducts] = useState<RelatedProduct[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
@@ -154,7 +155,35 @@ export default function ProductDetail() {
     }
   };
 
-  // Buscar produtos relacionados com base no tipo no nome ou aleatoriamente
+  const handleBuyNow = async () => {
+    if (!product) return;
+
+    // Rings must have size
+    const isRing = product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis') || product.name.toLowerCase().includes('aliança');
+    if (isRing && !selectedSize) {
+      toast({
+        title: "Tamanho necessário",
+        description: "Selecione um tamanho antes de continuar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setBuyingNow(true);
+      await addToCart(product.id, quantity, selectedSize || undefined);
+      // Pequeno delay para garantir estado sincronizado
+      setTimeout(() => navigate('/checkout'), 50);
+    } catch (e) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o produto",
+        variant: "destructive",
+      });
+    } finally {
+      setBuyingNow(false);
+    }
+  };
   useEffect(() => {
     const run = async () => {
       if (!product) return;
@@ -423,12 +452,12 @@ export default function ProductDetail() {
               </Button>
 
               <Button
-                onClick={() => navigate('/checkout')}
+                onClick={handleBuyNow}
                 variant="default"
                 className="w-full h-12 text-lg bg-accent hover:bg-accent/90 text-black"
-                disabled={product.stock_quantity === 0 || ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis') || product.name.toLowerCase().includes('aliança')) && !selectedSize)}
+                disabled={buyingNow || product.stock_quantity === 0 || ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis') || product.name.toLowerCase().includes('aliança')) && !selectedSize)}
               >
-                Comprar Agora
+                {buyingNow ? 'Redirecionando...' : 'Comprar Agora'}
               </Button>
 
               <Button
