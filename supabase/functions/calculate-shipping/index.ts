@@ -61,52 +61,59 @@ serve(async (req) => {
       );
     }
 
-    // 2. Calcular frete baseado na região e distância
+    // 2. Calcular frete baseado na região e distância com valores mais reais
     const calculateShippingCost = (originState: string, destState: string, destRegion: string) => {
-      let basePrice = 15.50;
+      let basePrice = 25.50; // Valor base aumentado
       let baseDays = 5;
 
       // Mesma cidade/região
       if (originState === destState) {
         if (destRegion === "13") { // Limeira e região
-          basePrice = 8.50;
+          basePrice = 15.50;
           baseDays = 2;
         } else {
-          basePrice = 12.50; // Mesmo estado
+          basePrice = 19.50; // Mesmo estado
           baseDays = 3;
         }
       }
       // Estados próximos (Sudeste/Sul)
       else if (['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS'].includes(destState)) {
         if (['RJ', 'MG', 'ES'].includes(destState)) {
-          basePrice = 18.50; // Sudeste próximo
+          basePrice = 28.50; // Sudeste próximo
           baseDays = 4;
+        } else if (['RS'].includes(destState)) {
+          // Rio Grande do Sul - valor específico baseado no exemplo
+          basePrice = 46.50; // Baseado no valor da HubJoias
+          baseDays = 8;
         } else {
-          basePrice = 22.80; // Sul
+          basePrice = 35.80; // Sul geral
           baseDays = 6;
         }
       }
       // Centro-Oeste
       else if (['GO', 'MT', 'MS', 'DF'].includes(destState)) {
-        basePrice = 26.90;
+        basePrice = 38.90;
         baseDays = 7;
       }
       // Nordeste
       else if (['BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA'].includes(destState)) {
-        basePrice = 32.90;
+        basePrice = 42.90;
         baseDays = 9;
       }
       // Norte
       else {
-        basePrice = 38.90;
+        basePrice = 48.90;
         baseDays = 12;
       }
 
       // Ajustar por peso (acima de 100g)
       if (weight > 0.1) {
         const extraWeight = weight - 0.1;
-        basePrice += extraWeight * 5; // R$ 5 por 100g adicional
+        basePrice += extraWeight * 7; // R$ 7 por 100g adicional (mais realista)
       }
+
+      // Margem de segurança de 10% para cobrir flutuações
+      basePrice = Math.round(basePrice * 1.1 * 100) / 100;
 
       // Adicionar 48h conforme solicitado
       baseDays += 2;
