@@ -425,7 +425,7 @@ export default function ProductDetail() {
               <Button
                 onClick={() => navigate('/checkout')}
                 variant="default"
-                className="w-full h-12 text-lg bg-accent hover:bg-accent/90"
+                className="w-full h-12 text-lg bg-accent hover:bg-accent/90 text-black"
                 disabled={product.stock_quantity === 0 || ((product.name.toLowerCase().includes('anel') || product.name.toLowerCase().includes('anéis') || product.name.toLowerCase().includes('aliança')) && !selectedSize)}
               >
                 Comprar Agora
