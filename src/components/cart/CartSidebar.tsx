@@ -26,6 +26,8 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
     migrateLocalCartToUser
   } = useCart(user);
 
+  console.log('🛒 CartSidebar - cartItems:', cartItems, 'loading:', loading, 'user:', user?.id);
+
   // Migrate local cart when user logs in - with improved timing
   useEffect(() => {
     if (user?.id && cartItems.length === 0) {

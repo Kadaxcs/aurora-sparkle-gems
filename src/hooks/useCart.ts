@@ -40,6 +40,8 @@ export function useCart(user: any) {
   const [lastLoadTime, setLastLoadTime] = useState(0);
   const { toast } = useToast();
 
+  console.log('🛒 useCart hook - cartItems count:', cartItems.length, 'user:', user?.id);
+
   // Debounced load function to prevent multiple rapid calls
   const debouncedLoadCartItems = useCallback(
     debounce(() => {
@@ -81,6 +83,7 @@ export function useCart(user: any) {
   }, [debouncedLoadCartItems]);
 
   const loadCartItems = async () => {
+    console.log('🛒 Loading cart items for user:', user?.id ? 'authenticated' : 'guest');
     setLoading(true);
     try {
       if (user) {
@@ -92,6 +95,8 @@ export function useCart(user: any) {
       const isRlsError =
         error?.code === '42501' ||
         (typeof error?.message === 'string' && error.message.toLowerCase().includes('row-level security'));
+
+      console.log('🛒 Cart loading error:', error, 'Is RLS error:', isRlsError);
 
       if (isRlsError) {
         // Fallback para carrinho local caso políticas RLS impeçam a leitura
@@ -107,11 +112,17 @@ export function useCart(user: any) {
   const loadAuthenticatedCart = useCallback(async () => {
     if (!user?.id) return;
     
+    console.log('🛒 Loading authenticated cart for user:', user.id);
+    
     const { data, error } = await supabase
       .from('cart_items')
       .select(`
-        *,
-        products (
+        id,
+        product_id,
+        quantity,
+        created_at,
+        updated_at,
+        products!inner (
           name,
           price,
           sale_price,
@@ -119,9 +130,15 @@ export function useCart(user: any) {
         )
       `)
       .eq('user_id', user.id)
-      .limit(50); // Limit to prevent large responses
+      .limit(50);
 
-    if (error) throw error;
+    console.log('🛒 Cart data received:', data, 'Error:', error);
+    console.log('🛒 Setting cartItems to:', data || []);
+    
+    if (error) {
+      console.error('🛒 Error loading cart:', error);
+      throw error;
+    }
     setCartItems(data || []);
   }, [user?.id]);
 
@@ -179,6 +196,7 @@ export function useCart(user: any) {
   };
 
   const addToCart = async (productId: string, quantity: number = 1, size?: string) => {
+    console.log('🛒 Adding to cart:', productId, 'qty:', quantity, 'size:', size, 'user:', user?.id ? 'authenticated' : 'guest');
     try {
       if (user?.id) {
         await addToAuthenticatedCart(productId, quantity, size);
@@ -191,6 +209,7 @@ export function useCart(user: any) {
         description: "O produto foi adicionado ao carrinho",
       });
     } catch (error: any) {
+      console.log('🛒 Add to cart error:', error);
       // Failover: se houver erro de RLS ou qualquer erro de permissão, usar carrinho local
       const isRlsError =
         error?.code === "42501" ||
