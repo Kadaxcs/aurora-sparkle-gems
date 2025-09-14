@@ -346,9 +346,9 @@ export default function Checkout() {
     }
   };
 
-  const handleFreightCalculated = (freight: any) => {
+  const handleFreightCalculated = (freight: { cost: number; days: number; service: string } | null) => {
     if (freight) {
-      setFreightCost(freight.price);
+      setFreightCost(freight.cost);
       setFreightDays(freight.days);
     } else {
       setFreightCost(0);

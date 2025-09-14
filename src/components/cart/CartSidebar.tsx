@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, Trash2, ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { AuthDialog } from "@/components/auth/AuthDialog";
+import { LazyImage } from "@/components/LazyImage";
 
 interface CartSidebarProps {
   open: boolean;
@@ -57,7 +58,7 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col will-change-transform">
         <SheetHeader>
           <SheetTitle className="font-serif text-primary">
             Carrinho {cartItems.length > 0 && (
@@ -91,12 +92,21 @@ export function CartSidebar({ open, onOpenChange, user }: CartSidebarProps) {
           </div>
         ) : (
           <>
+            {/* Lembrete de login para autofill e compra mais rápida */}
+            {!user && cartItems.length > 0 && (
+              <div className="mb-3 p-3 rounded-md border bg-secondary/40 text-sm">
+                <p className="mb-2">
+                  Já comprou antes? Entre para preencher seus dados e endereço automaticamente.
+                </p>
+                <Button size="sm" onClick={() => setAuthDialogOpen(true)}>Fazer login</Button>
+              </div>
+            )}
             <div className="flex-1 overflow-auto space-y-4">
               {cartItems.map((item) => (
                 <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
                   <div className="w-16 h-16 bg-muted rounded-md overflow-hidden">
                     {getItemImage(item) && (
-                      <img 
+                      <LazyImage 
                         src={getItemImage(item)} 
                         alt={item.products.name}
                         className="w-full h-full object-cover"
