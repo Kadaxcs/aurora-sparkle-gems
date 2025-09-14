@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
+import { useProductCache } from "@/hooks/useProductCache";
 
 interface Product {
   id: string;
@@ -19,13 +20,14 @@ interface Product {
   is_featured: boolean;
 }
 
-export function FeaturedProducts() {
+function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const { addToCart: addToCartHook } = useCart(user);
+  const { getCachedProduct, setCachedProduct } = useProductCache();
 
   useEffect(() => {
     fetchFeaturedProducts();
@@ -34,23 +36,38 @@ export function FeaturedProducts() {
     });
   }, []);
 
-  const fetchFeaturedProducts = async () => {
+  const fetchFeaturedProducts = useCallback(async () => {
+    // Check cache first
+    const cacheKey = 'featured-products';
+    const cached = getCachedProduct(cacheKey);
+    
+    if (cached) {
+      setProducts(cached);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('id, name, slug, price, sale_price, images, short_description, is_featured')
         .eq('is_featured', true)
         .eq('is_active', true)
         .limit(6);
 
       if (error) throw error;
-      setProducts((data as any[]) || []);
+      
+      const productsData = (data as any[]) || [];
+      setProducts(productsData);
+      
+      // Cache for 5 minutes
+      setCachedProduct(cacheKey, productsData);
     } catch (error: any) {
       console.error('Erro ao carregar produtos em destaque:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [getCachedProduct, setCachedProduct]);
 
   const addToWishlist = async (productId: string) => {
     try {
@@ -191,6 +208,8 @@ export function FeaturedProducts() {
                           src={product.images[0]}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -324,3 +343,5 @@ export function FeaturedProducts() {
     </section>
   );
 }
+
+export default memo(FeaturedProducts);

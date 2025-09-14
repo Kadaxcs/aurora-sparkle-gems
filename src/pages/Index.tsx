@@ -1,7 +1,7 @@
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { Collections } from "@/components/Collections";
-import { FeaturedProducts } from "@/components/FeaturedProducts";
+import FeaturedProducts from "@/components/FeaturedProducts";
 import { Footer } from "@/components/Footer";
 
 const Index = () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Footer } from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/useCart";
+import { useProductCache } from "@/hooks/useProductCache";
 
 interface Product {
   id: string;
@@ -49,7 +50,14 @@ export default function Products() {
   useEffect(() => {
     checkUser();
     fetchCategories();
-    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchProducts();
+    }, 300); // Debounce product fetching
+
+    return () => clearTimeout(timeoutId);
   }, [searchQuery, sortBy, filterCategory, priceRange]);
 
   const checkUser = async () => {
@@ -57,7 +65,16 @@ export default function Products() {
     setUser(user);
   };
 
-  const fetchCategories = async () => {
+  const { getCachedCategories, setCachedCategories } = useProductCache();
+
+  const fetchCategories = useCallback(async () => {
+    // Check cache first
+    const cached = getCachedCategories();
+    if (cached) {
+      setCategories(cached);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('categories')
@@ -66,21 +83,33 @@ export default function Products() {
         .order('name');
 
       if (error) throw error;
-      setCategories(data || []);
+      const categoriesData = data || [];
+      setCategories(categoriesData);
+      setCachedCategories(categoriesData);
     } catch (error) {
       console.error('Erro ao buscar categorias:', error);
     }
-  };
+  }, [getCachedCategories, setCachedCategories]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    
     try {
       let query = supabase
         .from('products')
         .select(`
-          *,
+          id,
+          name,
+          price,
+          sale_price,
+          images,
+          slug,
+          is_featured,
+          category_id,
           categories(name)
         `)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .limit(50); // Limit results for better performance
 
       // Apply search filter
       if (searchQuery) {
@@ -130,7 +159,7 @@ export default function Products() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, sortBy, filterCategory, priceRange, toast]);
 
   const addToWishlist = async (productId: string) => {
     if (!user) {
@@ -285,6 +314,8 @@ export default function Products() {
                     src={getImageUrl(product)}
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.src = "/placeholder.svg";
                     }}

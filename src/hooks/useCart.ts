@@ -1,6 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+// Debounce utility for performance
+const debounce = (func: Function, wait: number) => {
+  let timeout: NodeJS.Timeout;
+  return function executedFunction(...args: any[]) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
 
 interface CartItem {
   id: string;
@@ -24,30 +37,48 @@ interface LocalCartItem {
 export function useCart(user: any) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lastLoadTime, setLastLoadTime] = useState(0);
   const { toast } = useToast();
 
-  // Load cart items when user changes or component mounts
-  // Load on mount and when auth state changes
-  useEffect(() => {
-    loadCartItems();
-  }, [user]);
+  // Debounced load function to prevent multiple rapid calls
+  const debouncedLoadCartItems = useCallback(
+    debounce(() => {
+      const now = Date.now();
+      if (now - lastLoadTime > 1000) { // Only load if >1s since last load
+        setLastLoadTime(now);
+        loadCartItems();
+      }
+    }, 300),
+    [user, lastLoadTime]
+  );
 
-  // Listen for cart updates across components/tabs
+  // Load cart items when user changes or component mounts
   useEffect(() => {
+    debouncedLoadCartItems();
+  }, [user?.id]); // Only depend on user ID, not the whole user object
+
+  // Listen for cart updates across components/tabs - optimized
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const handleCartUpdated = () => {
-      loadCartItems();
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => debouncedLoadCartItems(), 100);
     };
+    
     const handleStorage = (e: StorageEvent) => {
       if (e.key === 'cart_items') handleCartUpdated();
     };
 
     window.addEventListener('cart:updated', handleCartUpdated as EventListener);
     window.addEventListener('storage', handleStorage);
+    
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('cart:updated', handleCartUpdated as EventListener);
       window.removeEventListener('storage', handleStorage);
     };
-  }, [user]);
+  }, [debouncedLoadCartItems]);
 
   const loadCartItems = async () => {
     setLoading(true);
@@ -73,7 +104,9 @@ export function useCart(user: any) {
     }
   };
 
-  const loadAuthenticatedCart = async () => {
+  const loadAuthenticatedCart = useCallback(async () => {
+    if (!user?.id) return;
+    
     const { data, error } = await supabase
       .from('cart_items')
       .select(`
@@ -85,11 +118,12 @@ export function useCart(user: any) {
           images
         )
       `)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .limit(50); // Limit to prevent large responses
 
     if (error) throw error;
     setCartItems(data || []);
-  };
+  }, [user?.id]);
 
   const loadLocalCart = async () => {
     const localItems = getLocalCartItems();
@@ -182,39 +216,60 @@ export function useCart(user: any) {
     }
   };
 
-  const addToAuthenticatedCart = async (productId: string, quantity: number, size?: string) => {
-    // Check if item already exists
-    const { data: existingItem } = await supabase
-      .from('cart_items')
-      .select('id, quantity')
-      .eq('user_id', user.id)
-      .eq('product_id', productId)
-      .maybeSingle();
+  const addToAuthenticatedCart = useCallback(async (productId: string, quantity: number, size?: string) => {
+    if (!user?.id) return;
+    
+    // Optimistic update - add to state immediately
+    const tempItem: CartItem = {
+      id: `temp-${Date.now()}`,
+      product_id: productId,
+      quantity,
+      size,
+      products: { name: 'Loading...', price: 0, images: [] }
+    };
+    
+    setCartItems(prev => [...prev, tempItem]);
 
-    if (existingItem) {
-      // Update existing item
-      const { error } = await supabase
+    try {
+      // Check if item already exists
+      const { data: existingItem } = await supabase
         .from('cart_items')
-        .update({ quantity: existingItem.quantity + quantity })
-        .eq('id', existingItem.id);
+        .select('id, quantity')
+        .eq('user_id', user.id)
+        .eq('product_id', productId)
+        .maybeSingle();
 
-      if (error) throw error;
-    } else {
-      // Insert new item
-      const { error } = await supabase
-        .from('cart_items')
-        .insert({
-          user_id: user.id,
-          product_id: productId,
-          quantity
-        });
+      if (existingItem) {
+        // Update existing item
+        const { error } = await supabase
+          .from('cart_items')
+          .update({ quantity: existingItem.quantity + quantity })
+          .eq('id', existingItem.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Insert new item
+        const { error } = await supabase
+          .from('cart_items')
+          .insert({
+            user_id: user.id,
+            product_id: productId,
+            quantity,
+            size
+          });
+
+        if (error) throw error;
+      }
+
+      // Reload cart to get actual data
+      setTimeout(() => loadAuthenticatedCart(), 100);
+      notifyCartUpdated();
+    } catch (error) {
+      // Remove optimistic update on error
+      setCartItems(prev => prev.filter(item => item.id !== tempItem.id));
+      throw error;
     }
-
-    await loadAuthenticatedCart();
-    notifyCartUpdated();
-  };
+  }, [user?.id, loadAuthenticatedCart]);
 
   const addToLocalCart = async (productId: string, quantity: number, size?: string) => {
     const localItems = getLocalCartItems();
