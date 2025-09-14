@@ -471,66 +471,6 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Apenas Especificações Técnicas - removidas seções desnecessárias */}
-        <div className="space-y-8">
-          <Separator />
-          
-          <div className="text-center">
-            <h2 className="text-2xl font-serif font-bold mb-8 tracking-wider">
-              E S P E C I F I C A Ç Õ E S
-            </h2>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-medium mb-4">Informações Técnicas</h3>
-                <div className="space-y-3 text-sm">
-                  {product.weight && (
-                    <div className="flex justify-between">
-                      <span>Peso:</span>
-                      <span className="font-medium">{product.weight}g</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Material:</span>
-                    <span className="font-medium">{product.material || "Liga de metal nobre"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Acabamento:</span>
-                    <span className="font-medium">Banho de ouro/ródio</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Garantia:</span>
-                    <span className="font-medium">6 meses</span>
-                  </div>
-                  {product.sku && (
-                    <div className="flex justify-between">
-                      <span>SKU:</span>
-                      <span className="font-medium">{product.sku}</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Descrição se existir */}
-          {product.description && (
-            <div className="max-w-4xl mx-auto">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-medium mb-4">Sobre este Produto</h3>
-                  <div 
-                    className="prose prose-sm max-w-none text-muted-foreground"
-                    dangerouslySetInnerHTML={{ __html: product.description }}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-
         {/* Produtos Relacionados */}
         {relatedProducts.length > 0 && (
           <div className="space-y-8 mt-12">
