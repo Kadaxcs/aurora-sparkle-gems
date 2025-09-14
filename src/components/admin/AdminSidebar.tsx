@@ -21,6 +21,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 const menuItems = [
@@ -44,8 +46,13 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
+  const { open, setOpen } = useSidebar();
+  
   return (
-    <Sidebar className="w-64 border-r border-border">
+    <Sidebar className="w-64 lg:w-64" collapsible="icon">
+      {/* Mobile trigger inside sidebar */}
+      <SidebarTrigger className="lg:hidden m-2 self-start" />
+      
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-lg font-serif text-primary">
@@ -59,6 +66,7 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
                     onClick={() => onSectionChange(item.id)}
                     isActive={activeSection === item.id}
                     className="w-full justify-start"
+                    title={item.label}
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>

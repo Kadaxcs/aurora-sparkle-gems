@@ -14,7 +14,7 @@ import { AdminPages } from "@/components/admin/AdminPages";
 import { HubJoiasManagement } from "@/components/admin/HubJoiasManagement";
 
 import { AdminProtectedRoute } from "@/components/auth/AdminProtectedRoute";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function Admin() {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -54,12 +54,20 @@ export default function Admin() {
     <AdminProtectedRoute>
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
+          {/* Global trigger for mobile - always visible */}
+          <header className="lg:hidden h-16 flex items-center border-b bg-background px-4 fixed top-0 left-0 right-0 z-50">
+            <SidebarTrigger className="mr-2" />
+            <h1 className="font-serif text-primary text-lg">Admin Panel</h1>
+          </header>
+          
           <AdminSidebar 
             activeSection={activeSection} 
             onSectionChange={setActiveSection} 
           />
-          <main className="flex-1 p-6">
-            {renderContent()}
+          <main className="flex-1 p-4 lg:p-6 lg:mt-0 mt-16 overflow-auto">
+            <div className="max-w-full">
+              {renderContent()}
+            </div>
           </main>
         </div>
       </SidebarProvider>

@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { 
   Search, 
   ShoppingCart, 
   Heart, 
   User, 
-  Menu
+  Menu,
+  X
  } from "lucide-react";
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { UserAccountDropdown } from "@/components/auth/UserAccountDropdown";
@@ -22,6 +24,7 @@ export function Header() {
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const { getTotalItems } = useCart(user);
   const [cartItemsCount, setCartItemsCount] = useState(0);
@@ -118,9 +121,64 @@ export function Header() {
               </Button>
             )}
 
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
-            </Button>
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <SheetHeader>
+                  <SheetTitle className="font-serif text-primary">Menu</SheetTitle>
+                </SheetHeader>
+                
+                <nav className="flex flex-col space-y-4 mt-8">
+                  <Link 
+                    to="/aneis" 
+                    className="text-lg font-medium text-foreground hover:text-gold transition-colors py-3 border-b border-border/50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Anéis
+                  </Link>
+                  <Link 
+                    to="/brincos" 
+                    className="text-lg font-medium text-foreground hover:text-gold transition-colors py-3 border-b border-border/50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Brincos
+                  </Link>
+                  <Link 
+                    to="/colares" 
+                    className="text-lg font-medium text-foreground hover:text-gold transition-colors py-3 border-b border-border/50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Colares
+                  </Link>
+                  <Link 
+                    to="/pulseiras" 
+                    className="text-lg font-medium text-foreground hover:text-gold transition-colors py-3 border-b border-border/50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Pulseiras
+                  </Link>
+                  <Link 
+                    to="/conjuntos" 
+                    className="text-lg font-medium text-foreground hover:text-gold transition-colors py-3 border-b border-border/50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Conjuntos
+                  </Link>
+                  <Link 
+                    to="/products" 
+                    className="text-lg font-medium text-foreground hover:text-gold transition-colors py-3"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Todas as Joias
+                  </Link>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>

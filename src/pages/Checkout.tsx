@@ -444,7 +444,7 @@ export default function Checkout() {
                   <CardTitle>Dados Pessoais</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="firstName">Nome *</Label>
                       <Input
@@ -464,7 +464,7 @@ export default function Checkout() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="email">E-mail *</Label>
                       <Input
@@ -505,7 +505,7 @@ export default function Checkout() {
                   <CardTitle>Endereço de Entrega</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="zipCode">CEP *</Label>
                       <Input
@@ -515,7 +515,7 @@ export default function Checkout() {
                         required
                       />
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="sm:col-span-2">
                       <Label htmlFor="street">Rua *</Label>
                       <Input
                         id="street"
@@ -525,7 +525,7 @@ export default function Checkout() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="number">Número *</Label>
                       <Input
@@ -535,7 +535,7 @@ export default function Checkout() {
                         required
                       />
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="sm:col-span-2">
                       <Label htmlFor="complement">Complemento</Label>
                       <Input
                         id="complement"
@@ -544,7 +544,7 @@ export default function Checkout() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="neighborhood">Bairro *</Label>
                       <Input
