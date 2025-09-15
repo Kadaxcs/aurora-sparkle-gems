@@ -7,16 +7,15 @@ export const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundImage: `url(${heroRing})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
-      >
+      <div className="absolute inset-0 z-0">
+        <img
+          src={heroRing}
+          alt="Anéis encantadores Bella Aurora - imagem hero"
+          className="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+        />
         <div className="absolute inset-0 bg-gradient-luxury"></div>
       </div>
 
