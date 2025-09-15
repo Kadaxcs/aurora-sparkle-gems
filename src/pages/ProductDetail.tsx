@@ -59,7 +59,7 @@ interface RelatedProduct {
 }
 
 export default function ProductDetail() {
-  const { productId } = useParams<{ productId: string }>();
+  const { productId, slug } = useParams<{ productId: string; slug?: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -81,16 +81,68 @@ export default function ProductDetail() {
     }
   }, [productId]);
 
-  // Update document title when product is loaded
+  // Update SEO tags and ensure slug in URL
   useEffect(() => {
-    if (product?.name) {
-      document.title = `${product.name} | Sua Loja`;
+    if (!product) return;
+
+    const makeSlug = (s: string) =>
+      s
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+
+    const computedSlug = makeSlug(product.name);
+
+    if (productId && slug !== computedSlug) {
+      navigate(`/produto/${productId}/${computedSlug}`, { replace: true });
     }
-    
-    return () => {
-      document.title = "Sua Loja";
+
+    const title = `${product.name} | Bella Aurora Joias`;
+    document.title = title;
+
+    const descSource = product.short_description || product.description || "";
+    const description = descSource.length > 160 ? `${descSource.slice(0, 157)}...` : descSource;
+
+    const canonical = `${window.location.origin}/produto/${productId}/${computedSlug}`;
+
+    const setMeta = (selector: string, attr: 'name' | 'property', content: string) => {
+      if (!content) return;
+      let el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${selector}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, selector);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
     };
-  }, [product]);
+
+    const setLinkCanonical = (href: string) => {
+      let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.setAttribute('rel', 'canonical');
+        document.head.appendChild(link);
+      }
+      link.setAttribute('href', href);
+    };
+
+    setMeta('description', 'name', description);
+    setLinkCanonical(canonical);
+    setMeta('og:type', 'property', 'product');
+    setMeta('og:title', 'property', title);
+    setMeta('og:description', 'property', description);
+    setMeta('og:url', 'property', canonical);
+    const imageUrl = Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '';
+    if (imageUrl) setMeta('og:image', 'property', imageUrl);
+    setMeta('twitter:card', 'name', 'summary_large_image');
+    setMeta('twitter:title', 'name', title);
+    setMeta('twitter:description', 'name', description);
+    if (imageUrl) setMeta('twitter:image', 'name', imageUrl);
+  }, [product, productId, slug, navigate]);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
