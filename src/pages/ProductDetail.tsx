@@ -81,6 +81,17 @@ export default function ProductDetail() {
     }
   }, [productId]);
 
+  // Update document title when product is loaded
+  useEffect(() => {
+    if (product?.name) {
+      document.title = `${product.name} | Sua Loja`;
+    }
+    
+    return () => {
+      document.title = "Sua Loja";
+    };
+  }, [product]);
+
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
